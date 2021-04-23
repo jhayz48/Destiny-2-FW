@@ -8,9 +8,7 @@ while getopts "a:" opt; do
   esac
 done
 
-setup () {
-  echo "setting up rules"
-
+reset_ip_tables () {
   #reset iptables to default
   sudo iptables -P INPUT ACCEPT
   sudo iptables -P FORWARD ACCEPT
@@ -24,6 +22,12 @@ setup () {
   #allow openvpn
   sudo iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
   sudo iptables -A INPUT -p udp -m udp --dport 1194 -j ACCEPT
+}
+
+setup () {
+  echo "setting up rules"
+
+  reset_ip_tables
 
   read -p "Enter your platform xbox, psn, steam:" platform
   platform=${platform:-"psn"}
@@ -79,4 +83,7 @@ elif [ "$action" == "stop" ]; then
 elif [ "$action" == "start" ]; then
   echo "enabling reject rule"
   iptables -A FORWARD -s $net -m string --string $reject_str --algo bm -j REJECT
+elif [ "$action" == "reset" ]; then
+  echo "erasing all rules"
+  reset_ip_tables
 fi 
