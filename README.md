@@ -13,5 +13,5 @@
 ``` bash d2firewall.sh -a reset ```
 
 ### Details:
-#### This script is written to work in a Ubuntu system with an iptables firewall.
+#### This script is written to work in a Ubuntu system with an iptables firewall and openvpn.
 #### Every time you want to invite players to the fireteam you must stop the firewall first. Once the fireteam is ready start the firewall back up.
