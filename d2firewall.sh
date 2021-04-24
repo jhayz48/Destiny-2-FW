@@ -85,9 +85,11 @@ elif [ "$action" == "stop" ]; then
   reject=$(<reject.rule)
   sudo iptables -D $reject
 elif [ "$action" == "start" ]; then
-  echo "enabling reject rule"
-  reject=$(<reject.rule)
-  sudo iptables -A $reject
+  if ! sudo iptables-save | grep -q "REJECT"; then
+    echo "enabling reject rule"
+    reject=$(<reject.rule)
+    sudo iptables -A $reject
+  fi
 elif [ "$action" == "reset" ]; then
   echo "erasing all rules"
   reset_ip_tables
