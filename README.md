@@ -3,15 +3,15 @@
 ## Download
 #### Clone repo or run this command: wget -q https://raw.githubusercontent.com/cloudex99/Destiny-2-Matchmaking-Firewall/main/d2firewall.sh -O ./d2firewall.sh
 ## Usage
-#### Setup: Initial setup
+#### Setup: ##### Initial setup
 ``` bash d2firewall.sh -a setup ```
-#### Stop: Disables the reject rule 
+#### Stop: ##### Disables the reject rule 
 ``` bash d2firewall.sh -a stop ```
-#### Start: Enables the reject rule
+#### Start: ##### Enables the reject rule
 ``` bash d2firewall.sh -a start ```
-#### Load: Loads the saved iptables firewall configuration
+#### Load: ##### Loads the saved iptables firewall configuration
 ``` bash d2firewall.sh -a load ```
-#### Reset: Reset iptables to default
+#### Reset: ##### Reset iptables to default
 ``` bash d2firewall.sh -a reset ```
 
 ### Details:
