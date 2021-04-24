@@ -44,7 +44,7 @@ setup () {
   fi
 
   default_net="10.8.0.0/24"
-  read -p "Enter your network/netmask default is [10.8.0.0/24] for openvpn:" net
+  read -p "Enter your network/netmask default is 10.8.0.0/24 for openvpn:" net
   net=${net:-$default_net}
   echo "How many psn ids are you using for this?"
   read pnum
