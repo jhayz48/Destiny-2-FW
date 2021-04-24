@@ -1,4 +1,4 @@
-# Destiny-2-Matchmaking-Firewall
+# Destiny-2-Matchmaking-Firewall-Iptables
 
 ## Download
 #### Clone repo or run this command: wget -q https://raw.githubusercontent.com/cloudex99/Destiny-2-Matchmaking-Firewall/main/d2firewall.sh -O ./d2firewall.sh
