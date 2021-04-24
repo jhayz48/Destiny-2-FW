@@ -10,7 +10,7 @@
 ``` bash d2firewall.sh -a stop ```
 #### Start: enable the reject rule
 ``` bash d2firewall.sh -a start ```
-#### Load: load the saved iptables firewall configuration
+#### Load: load the saved iptables firewall configuration (you don't need to worry about this)
 ``` bash d2firewall.sh -a load ```
 #### Reset: reset iptables to default
 ``` bash d2firewall.sh -a reset ```
