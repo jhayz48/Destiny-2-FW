@@ -90,6 +90,9 @@ elif [ "$action" == "start" ]; then
     reject=$(<reject.rule)
     sudo iptables -A $reject
   fi
+elif [ "$action" == "load" ]; then
+  echo "loading rules"
+  sudo iptables-restore < /etc/iptables/default.v4
 elif [ "$action" == "reset" ]; then
   echo "erasing all rules"
   reset_ip_tables
