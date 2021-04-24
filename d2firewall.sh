@@ -75,7 +75,7 @@ setup () {
   echo "FORWARD -s $net -m string --string $reject_str --algo bm -j REJECT" > reject.rule
   sudo iptables -A FORWARD -s $net -m string --string $reject_str --algo bm -j REJECT
 
-  sudo iptables-save > /etc/iptables/default.v4
+  sudo iptables-save > /etc/iptables/rules.v4
 }
 
 if [ "$action" == "setup" ]; then
@@ -92,7 +92,7 @@ elif [ "$action" == "start" ]; then
   fi
 elif [ "$action" == "load" ]; then
   echo "loading rules"
-  sudo iptables-restore < /etc/iptables/default.v4
+  sudo iptables-restore < /etc/iptables/rules.v4
 elif [ "$action" == "reset" ]; then
   echo "erasing all rules"
   reset_ip_tables
