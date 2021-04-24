@@ -1,5 +1,7 @@
 #!/bin/bash
 
+#credits to @basraayan and @inchenzo
+
 while getopts "a:" opt; do
   case $opt in
     a) action=$OPTARG ;;
