@@ -44,7 +44,7 @@ setup () {
   fi
 
   default_net="10.8.0.0/24"
-  read -p "Enter your network/netmask default is 10.8.0.0/24 for openvpn:" net
+  read -p "Enter your network/netmask default is [10.8.0.0/24] for openvpn:" net
   net=${net:-$default_net}
   echo "How many psn ids are you using for this?"
   read pnum
@@ -72,6 +72,7 @@ setup () {
       fi
     done
   done
+  echo "FORWARD -s $net -m string --string $reject_str --algo bm -j REJECT" > reject.rule
   sudo iptables -A FORWARD -s $net -m string --string $reject_str --algo bm -j REJECT
 
   sudo iptables-save > /etc/iptables/default.v4
@@ -81,11 +82,13 @@ if [ "$action" == "setup" ]; then
   setup
 elif [ "$action" == "stop" ]; then
   echo "disabling reject rule"
-  sudo iptables -D FORWARD -s $net -m string --string $reject_str --algo bm -j REJECT
+  reject=$(<reject.rule)
+  sudo iptables -D $reject
 elif [ "$action" == "start" ]; then
   echo "enabling reject rule"
-  iptables -A FORWARD -s $net -m string --string $reject_str --algo bm -j REJECT
+  reject=$(<reject.rule)
+  sudo iptables -A $reject
 elif [ "$action" == "reset" ]; then
   echo "erasing all rules"
   reset_ip_tables
-fi 
+fi
