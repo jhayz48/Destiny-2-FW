@@ -36,7 +36,7 @@ setup () {
 
   reset_ip_tables
 
-  read -p "Enter your platform xbox, psn, steam:" platform
+  read -p "Enter your platform xbox, psn, steam: " platform
   platform=${platform:-"psn"}
   if [ "$platform" == "psn" ]; then
     reject_str="psn-4"
@@ -49,7 +49,7 @@ setup () {
   fi
 
   default_net="10.8.0.0/24"
-  read -p "Enter your network/netmask default is 10.8.0.0/24 for openvpn:" net
+  read -p "Enter your network/netmask default is 10.8.0.0/24 for openvpn: " net
   net=${net:-$default_net}
   default_net=$net
   echo "How many systems are you using for this?"
@@ -62,7 +62,7 @@ setup () {
     idf="system$num"
     echo "Enter the sniffed ID for System $num"
     read sid
-    ids+=( "$idf:$sid" )
+    ids+=( "$idf;$sid" )
   done
 
   echo "-m string --string $reject_str --algo bm -j REJECT" > reject.rule
@@ -79,7 +79,7 @@ setup () {
     else
       inet="0.0.0.0/0"
     fi
-    IFS=':' read -r -a id <<< "$elem"
+    IFS=';' read -r -a id <<< "$elem"
     sudo iptables -N "${id[0]}"
     sudo iptables -I FORWARD -s $inet -p udp -m string --string "${id[1]}" --algo bm -j "${id[0]}"
     ((INDEX++))
@@ -88,7 +88,7 @@ setup () {
   INDEX1=1
   for i in "${ids[@]}"
   do
-    IFS=':' read -r -a id <<< "$i"
+    IFS=';' read -r -a id <<< "$i"
     INDEX2=1
     for j in "${ids[@]}"
     do
@@ -102,7 +102,7 @@ setup () {
         else
           net="0.0.0.0/0"
         fi
-        IFS=':' read -r -a idx <<< "$j"
+        IFS=';' read -r -a idx <<< "$j"
         sudo iptables -A "${id[0]}" -s $net -p udp -m string --string "${idx[1]}" --algo bm -j ACCEPT
       fi
       ((INDEX2++))
