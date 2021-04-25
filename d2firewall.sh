@@ -61,8 +61,12 @@ setup () {
     ids+=( "$idf:$sid" )
   done
 
+  count=1;
   for i in "${ids[@]}"
   do
+    if [ $count -gt 2 ]; then
+      net="0.0.0.0/0"
+    fi
     IFS=':' read -r -a id <<< "$i"
     sudo iptables -N "${id[0]}"
     sudo iptables -A FORWARD -s $net -p udp -m string --string "${id[1]}" --algo bm -j "${id[0]}"
@@ -73,6 +77,7 @@ setup () {
         sudo iptables -A "${id[0]}" -s $net -p udp -m string --string "${idx[1]}" --algo bm -j ACCEPT
       fi
     done
+    ((count++))
   done
   echo "FORWARD -s $net -m string --string $reject_str --algo bm -j REJECT" > reject.rule
   sudo iptables -A FORWARD -s $net -m string --string $reject_str --algo bm -j REJECT
