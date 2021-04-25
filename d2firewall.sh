@@ -16,7 +16,6 @@ reset_ip_tables () {
   sudo iptables -P FORWARD ACCEPT
   sudo iptables -P OUTPUT ACCEPT
 
-  #comment out the next 2 lines if you are not using a vps
   #sudo iptables -t nat -F
   #sudo iptables -t mangle -F
   
@@ -28,8 +27,8 @@ reset_ip_tables () {
     sudo iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
   fi
   sudo iptables -A INPUT -p udp -m udp --dport 1194 -j ACCEPT
-  #sudo iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
-  #sudo iptables -A FORWARD -s 10.8.0.0/24 -j ACCEPT
+  sudo iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
+  sudo iptables -A FORWARD -s 10.8.0.0/24 -j ACCEPT
 }
 
 setup () {
@@ -66,20 +65,26 @@ setup () {
     ids+=( "$idf:$sid" )
   done
 
+  echo "FORWARD -m string --string $reject_str --algo bm -j REJECT" > reject.rule
+  sudo iptables -I FORWARD -m string --string $reject_str --algo bm -j REJECT
+  
+  n=${#ids[*]}
   INDEX=1
-  for i in "${ids[@]}"
+  for (( i = n-1; i >= 0; i-- ))
   do
-    if [ $INDEX -gt 2 ]; then
-      inet="0.0.0.0/0"
-    else
+    elem=${ids[i]}
+    offset=$((n - 2))
+    if [ $INDEX -gt $offset ]; then
       inet=$net
+    else
+      inet="0.0.0.0/0"
     fi
-    IFS=':' read -r -a id <<< "$i"
+    IFS=':' read -r -a id <<< "$elem"
     sudo iptables -N "${id[0]}"
-    sudo iptables -A FORWARD -s $inet -p udp -m string --string "${id[1]}" --algo bm -j "${id[0]}"
+    sudo iptables -I FORWARD -s $inet -p udp -m string --string "${id[1]}" --algo bm -j "${id[0]}"
     ((INDEX++))
   done
-
+  
   INDEX1=1
   for i in "${ids[@]}"
   do
@@ -104,9 +109,6 @@ setup () {
     done
     ((INDEX1++))
   done
-
-  echo "FORWARD -m string --string $reject_str --algo bm -j REJECT" > reject.rule
-  sudo iptables -A FORWARD -m string --string $reject_str --algo bm -j REJECT
 
   sudo iptables-save > /etc/iptables/rules.v4
 
