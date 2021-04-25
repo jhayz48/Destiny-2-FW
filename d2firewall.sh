@@ -24,7 +24,9 @@ reset_ip_tables () {
   sudo iptables -X
 
   #allow openvpn
-  sudo iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
+  if ! sudo iptables-save | grep -q "POSTROUTING -s 10.8.0.0/24"; then
+    sudo iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
+  fi
   sudo iptables -A INPUT -p udp -m udp --dport 1194 -j ACCEPT
 }
 
