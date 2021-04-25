@@ -16,6 +16,7 @@ reset_ip_tables () {
   sudo iptables -P FORWARD ACCEPT
   sudo iptables -P OUTPUT ACCEPT
 
+  #comment out the next 2 lines if you are not using a vps
   #sudo iptables -t nat -F
   #sudo iptables -t mangle -F
   
@@ -102,8 +103,8 @@ setup () {
     ((INDEX1++))
   done
 
-  echo "FORWARD -s $net -m string --string $reject_str --algo bm -j REJECT" > reject.rule
-  sudo iptables -A FORWARD -s $net -m string --string $reject_str --algo bm -j REJECT
+  echo "FORWARD -s 0.0.0.0/0 -m string --string $reject_str --algo bm -j REJECT" > reject.rule
+  sudo iptables -A FORWARD -s 0.0.0.0/0 -m string --string $reject_str --algo bm -j REJECT
 
   sudo iptables-save > /etc/iptables/rules.v4
 
