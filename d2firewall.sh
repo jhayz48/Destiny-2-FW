@@ -17,8 +17,8 @@ reset_ip_tables () {
   sudo iptables -P OUTPUT ACCEPT
 
   #comment out the next 2 lines if you are not using a vps
-  sudo iptables -t nat -F
-  sudo iptables -t mangle -F
+  #sudo iptables -t nat -F
+  #sudo iptables -t mangle -F
   
   sudo iptables -F
   sudo iptables -X
