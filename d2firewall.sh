@@ -65,7 +65,7 @@ setup () {
     ids+=( "$idf:$sid" )
   done
 
-  echo "FORWARD -m string --string $reject_str --algo bm -j REJECT" > reject.rule
+  echo "-m string --string $reject_str --algo bm -j REJECT" > reject.rule
   sudo iptables -I FORWARD -m string --string $reject_str --algo bm -j REJECT
   
   n=${#ids[*]}
@@ -120,12 +120,14 @@ if [ "$action" == "setup" ]; then
 elif [ "$action" == "stop" ]; then
   echo "disabling reject rule"
   reject=$(<reject.rule)
-  sudo iptables -D $reject
+  sudo iptables -D FORWARD $reject
 elif [ "$action" == "start" ]; then
   if ! sudo iptables-save | grep -q "REJECT"; then
     echo "enabling reject rule"
+    pos=$(iptables -L FORWARD | grep "system" | wc -l)
+    ((pos++))
     reject=$(<reject.rule)
-    sudo iptables -A $reject
+    sudo iptables -I FORWARD $pos $reject
   fi
 elif [ "$action" == "load" ]; then
   echo "loading rules"
