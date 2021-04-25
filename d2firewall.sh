@@ -103,8 +103,8 @@ setup () {
     ((INDEX1++))
   done
 
-  echo "FORWARD -s 0.0.0.0/0 -m string --string $reject_str --algo bm -j REJECT" > reject.rule
-  sudo iptables -A FORWARD -s 0.0.0.0/0 -m string --string $reject_str --algo bm -j REJECT
+  echo "FORWARD -m string --string $reject_str --algo bm -j REJECT" > reject.rule
+  sudo iptables -A FORWARD -m string --string $reject_str --algo bm -j REJECT
 
   sudo iptables-save > /etc/iptables/rules.v4
 
