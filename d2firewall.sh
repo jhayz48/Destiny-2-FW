@@ -48,6 +48,7 @@ setup () {
   default_net="10.8.0.0/24"
   read -p "Enter your network/netmask default is 10.8.0.0/24 for openvpn:" net
   net=${net:-$default_net}
+  default_net=$net
   echo "How many systems are you using for this?"
   read pnum
 
@@ -61,28 +62,51 @@ setup () {
     ids+=( "$idf:$sid" )
   done
 
-  count=1
+  INDEX=1
   for i in "${ids[@]}"
   do
-    if [ $count -gt 2 ]; then
-      net="0.0.0.0/0"
+    if [ $INDEX -gt 2 ]; then
+      inet="0.0.0.0/0"
+    else
+      inet=$net
     fi
     IFS=':' read -r -a id <<< "$i"
     sudo iptables -N "${id[0]}"
-    sudo iptables -A FORWARD -s $net -p udp -m string --string "${id[1]}" --algo bm -j "${id[0]}"
+    sudo iptables -A FORWARD -s $inet -p udp -m string --string "${id[1]}" --algo bm -j "${id[0]}"
+    ((INDEX++))
+  done
+
+  INDEX1=1
+  for i in "${ids[@]}"
+  do
+    IFS=':' read -r -a id <<< "$i"
+    INDEX2=1
     for j in "${ids[@]}"
     do
       if [ "$i" != "$j" ]; then
+        if [[ $INDEX1 -eq 1 && $INDEX2 -eq 2 ]]; then
+          net=$default_net
+        elif [[ $INDEX1 -eq 2 && $INDEX2 -eq 1 ]]; then
+          net=$default_net
+        elif [[ $INDEX1 -gt 2 && $INDEX2 -lt 3 ]]; then
+          net=$default_net
+        else
+          net="0.0.0.0/0"
+        fi
         IFS=':' read -r -a idx <<< "$j"
         sudo iptables -A "${id[0]}" -s $net -p udp -m string --string "${idx[1]}" --algo bm -j ACCEPT
       fi
+      ((INDEX2++))
     done
-    ((count++))
+    ((INDEX1++))
   done
+
   echo "FORWARD -s $net -m string --string $reject_str --algo bm -j REJECT" > reject.rule
   sudo iptables -A FORWARD -s $net -m string --string $reject_str --algo bm -j REJECT
 
   sudo iptables-save > /etc/iptables/rules.v4
+
+  echo "setup complete and firewall is active"
 }
 
 if [ "$action" == "setup" ]; then
