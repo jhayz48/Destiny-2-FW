@@ -74,7 +74,7 @@ setup () {
     do
       if [ "$i" != "$j" ]; then
         IFS=':' read -r -a idx <<< "$j"
-        sudo iptables -A "${id[0]}" -s 0.0.0.0/0 -p udp -m string --string "${idx[1]}" --algo bm -j ACCEPT
+        sudo iptables -A "${id[0]}" -s $net -p udp -m string --string "${idx[1]}" --algo bm -j ACCEPT
       fi
     done
     ((count++))
