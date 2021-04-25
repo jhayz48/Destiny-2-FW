@@ -61,7 +61,7 @@ setup () {
     ids+=( "$idf:$sid" )
   done
 
-  count=1;
+  count=1
   for i in "${ids[@]}"
   do
     if [ $count -gt 2 ]; then
