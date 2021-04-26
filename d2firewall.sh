@@ -2,6 +2,8 @@
 
 #credits to @BasRaayman and @inchenzo
 
+SNIFF_TIMEOUT=60
+
 while getopts "a:" opt; do
   case $opt in
     a) action=$OPTARG ;;
@@ -9,6 +11,11 @@ while getopts "a:" opt; do
        exit 1
   esac
 done
+
+if ! command -v jq &> /dev/null
+then
+    sudo apt install jq
+fi
 
 reset_ip_tables () {
   #reset iptables to default
@@ -27,8 +34,20 @@ reset_ip_tables () {
     sudo iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
   fi
   sudo iptables -A INPUT -p udp -m udp --dport 1194 -j ACCEPT
-  #sudo iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
-  #sudo iptables -A FORWARD -s 10.8.0.0/24 -j ACCEPT
+  sudo iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
+  sudo iptables -A FORWARD -s 10.8.0.0/24 -j ACCEPT
+}
+
+get_platform () {
+  local val="psn-4"
+  if [ "$1" == "psn" ]; then
+    val="psn-4"
+  elif [ "$1" == "xbox" ]; then
+    val="xboxpwid"
+  elif [ "$1" == "steam" ]; then
+    val="steamid"
+  fi
+  echo $val
 }
 
 setup () {
@@ -38,32 +57,63 @@ setup () {
 
   read -p "Enter your platform xbox, psn, steam: " platform
   platform=${platform:-"psn"}
-  if [ "$platform" == "psn" ]; then
-    reject_str="psn-4"
-  elif [ "$platform" == "xbox" ]; then
-    reject_str="xboxpwid"
-  elif [ "$platform" == "steam" ]; then
-    reject_str="steamid"
-  else
-    reject_str="psn-4"
-  fi
+
+  reject_str=$(get_platform $platform)
+
+  echo $platform > /tmp/data.txt
 
   default_net="10.8.0.0/24"
   read -p "Enter your network/netmask default is 10.8.0.0/24 for openvpn: " net
   net=${net:-$default_net}
   default_net=$net
-  echo "How many systems are you using for this?"
-  read pnum
+  echo $net >> /tmp/data.txt
+
 
   ids=()
-  for ((i = 0; i < pnum; i++))
-  do 
-    num=$(( $i + 1 ))
-    idf="system$num"
-    echo "Enter the sniffed ID for System $num"
-    read sid
-    ids+=( "$idf;$sid" )
-  done
+  read -p "Would you like to sniff the ID automatically?(psn only) y/n: " yn
+  yn=${yn:-"y"}
+  if [ $platform != "psn" ]; then
+    yn="n"
+  fi
+  echo "n" >> /tmp/data.txt
+
+  if [ "$yn" == "y" ]; then
+    echo "Sniffing for $SNIFF_TIMEOUT seconds. Join up in orbit quick. "
+    sudo tshark -i tun0 -q -f "udp" -x -Y "frame contains $reject_str" -T json -e data.data -a duration:$SNIFF_TIMEOUT -x > /tmp/packets.json
+    json=$(cat /tmp/packets.json)
+    for row in $(echo "${json}" | jq -r '.[] | @base64'); do
+      _jq() {
+        echo ${row} | base64 --decode | jq -r ${1}
+      }
+      echo $(_jq '._source.layers."data.data"[0]') | xxd -r -p | grep -Pao "$reject_str.{15}" | grep -o '.......$' >> /tmp/tmp.txt
+    done
+    cat /tmp/tmp.txt | awk '!a[$0]++' > /tmp/ids.txt
+    snum=$(cat /tmp/ids.txt | wc -l)
+    echo $snum >> /tmp/data.txt
+    cat /tmp/ids.txt >> /tmp/data.txt
+    c=1
+    while read line; do
+      idf="system$c"
+      ids+=( "$idf;$line" )
+      ((c++))
+    done </tmp/ids.txt
+    rm /tmp/tmp.txt
+    rm /tmp/ids.txt
+    rm /tmp/packets.json
+  else
+    read -p "How many systems are you using for this? " snum
+    echo $snum >> /tmp/data.txt
+    for ((i = 0; i < snum; i++))
+    do 
+      num=$(( $i + 1 ))
+      idf="system$num"
+      read -p "Enter the sniffed ID for System $num: " sid
+      echo $sid >> /tmp/data.txt
+      ids+=( "$idf;$sid" )
+    done
+  fi;
+
+  mv /tmp/data.txt ./data.txt
 
   echo "-m string --string $reject_str --algo bm -j REJECT" > reject.rule
   sudo iptables -I FORWARD -m string --string $reject_str --algo bm -j REJECT
@@ -110,7 +160,7 @@ setup () {
     ((INDEX1++))
   done
 
-  sudo iptables-save > /etc/iptables/rules.v4
+  iptables-save > /etc/iptables/rules.v4
 
   echo "setup complete and firewall is active"
 }
@@ -129,9 +179,54 @@ elif [ "$action" == "start" ]; then
     reject=$(<reject.rule)
     sudo iptables -I FORWARD $pos $reject
   fi
+elif [ "$action" == "add" ]; then
+  read -p "Enter the sniffed ID: " id
+  if [ ! -z "$id" ]; then
+    echo $id >> data.txt
+    n=$(sed -n '4p' < data.txt)
+    ((n++))
+    sed -i "4c$n" data.txt
+    read -p "Would you like to enter another ID? y/n " yn
+    yn=${yn:-"y"}
+    if [ $yn == "y" ]; then
+      bash d2firewall.sh -a add
+    else
+      bash d2firewall.sh -a setup < data.txt
+    fi
+  fi
+elif [ "$action" == "remove" ]; then
+  tail -n +5 data.txt | cat -n
+  read -p "How many IDs do you want to remove from the end of this list? " num
+  head -n -"$num" data.txt > /tmp/data.txt && mv /tmp/data.txt ./data.txt
+  n=$(sed -n '4p' < data.txt)
+  n=$((n-num))
+  sed -i "4c$n" data.txt
+  bash d2firewall.sh -a setup < data.txt
+elif [ "$action" == "sniff" ]; then
+  echo "Have your buddies join you in orbit. You have $SNIFF_TIMEOUT seconds."
+  sys=$(sed -n '1p' < data.txt)
+  sys=$(get_platform $sys)
+  if [ $sys != "psn-4" ]; then
+    echo "only psn is supported atm"
+    exit 1
+  fi
+  bash d2firewall.sh -a stop
+  sudo tshark -i tun0 -q -f "udp" -x -Y "frame contains $sys" -T json -e data.data -a duration:$SNIFF_TIMEOUT -x > /tmp/packets.json
+  json=$(cat /tmp/packets.json)
+  for row in $(echo "${json}" | jq -r '.[] | @base64'); do
+    _jq() {
+     echo ${row} | base64 --decode | jq -r ${1}
+    }
+    echo $(_jq '._source.layers."data.data"[0]') | xxd -r -p | grep -Pao "$sys.{15}" | grep -o '.......$' >> data.txt
+  done
+  cat data.txt | awk '!a[$0]++' > /tmp/data.txt && mv /tmp/data.txt ./data.txt
+  n=$(tail -n +5 data.txt | wc -l)
+  sed -i "4c$n" data.txt
+  rm /tmp/packets.json
+  bash d2firewall.sh -a setup < data.txt
 elif [ "$action" == "load" ]; then
   echo "loading rules"
-  sudo iptables-restore < /etc/iptables/rules.v4
+  iptables-restore < /etc/iptables/rules.v4
 elif [ "$action" == "reset" ]; then
   echo "erasing all rules"
   reset_ip_tables
