@@ -5,21 +5,21 @@
 ```wget -q https://raw.githubusercontent.com/cloudex99/Destiny-2-Matchmaking-Firewall/main/d2firewall.sh -O ./d2firewall.sh```
 ## Usage
 #### Setup: initial setup
-``` bash d2firewall.sh -a setup ```
+``` sudo bash d2firewall.sh -a setup ```
 #### Stop: disable the reject rule 
-``` bash d2firewall.sh -a stop ```
+``` sudo bash d2firewall.sh -a stop ```
 #### Start: enable the reject rule
-``` bash d2firewall.sh -a start ```
+``` sudo bash d2firewall.sh -a start ```
 #### Add: add a sniffed id to your firewall
-``` bash d2firewall.sh -a add ```
+``` sudo bash d2firewall.sh -a add ```
 #### Remove: remove ids from the end of the list
-``` bash d2firewall.sh -a remove ```
-#### Sniff: Auto sniff for psn. Once run your buddies must join within 60 seconds. Should only be run after initial setup. Install jq prior to using this with ```apt install jq```.
-``` bash d2firewall.sh -a sniff ```
+``` sudo bash d2firewall.sh -a remove ```
+#### Sniff: Auto sniff for psn. Once run your buddies must join within 60 seconds. Should only be run after initial setup. Install jq prior to using this with ```sudo apt-get install jq```.
+``` sudo bash d2firewall.sh -a sniff ```
 #### Load: load the saved iptables firewall configuration (you don't need to worry about this)
-``` bash d2firewall.sh -a load ```
+``` sudo bash d2firewall.sh -a load ```
 #### Reset: reset iptables to default
-``` bash d2firewall.sh -a reset ```
+``` sudo bash d2firewall.sh -a reset ```
 
 ### Details:
 #### This script is written to work in a Ubuntu system with an iptables firewall and openvpn. 
