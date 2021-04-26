@@ -174,7 +174,7 @@ elif [ "$action" == "sniff" ]; then
     _jq() {
      echo ${row} | base64 --decode | jq -r ${1}
     }
-    echo $(_jq '._source.layers."data.data"[0]') | xxd -r -p | grep -Pao "$sys.{30}" | grep -o '.......$' >> data.txt
+    echo $(_jq '._source.layers."data.data"[0]') | xxd -r -p | grep -Pao "$sys.{15}" | grep -o '.......$' >> data.txt
   done
   cat data.txt | awk '!a[$0]++' > /tmp/data.txt && mv /tmp/data.txt ./data.txt
   n=$(tail -n +4 data.txt | wc -l)
