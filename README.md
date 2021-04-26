@@ -10,6 +10,12 @@
 ``` bash d2firewall.sh -a stop ```
 #### Start: enable the reject rule
 ``` bash d2firewall.sh -a start ```
+#### Add: add a sniffed id to your firewall
+``` bash d2firewall.sh -a add ```
+#### Remove: remove ids from the end of the list
+``` bash d2firewall.sh -a remove ```
+#### Sniff: Auto sniff for psn. Once run your buddies must join within 30 seconds.
+``` bash d2firewall.sh -a sniff ```
 #### Load: load the saved iptables firewall configuration (you don't need to worry about this)
 ``` bash d2firewall.sh -a load ```
 #### Reset: reset iptables to default
