@@ -14,7 +14,7 @@
 ``` bash d2firewall.sh -a add ```
 #### Remove: remove ids from the end of the list
 ``` bash d2firewall.sh -a remove ```
-#### Sniff: Auto sniff for psn. Once run your buddies must join within 30 seconds.
+#### Sniff: Auto sniff for psn. Once run your buddies must join within 30 seconds. Should only be run after initial setup.
 ``` bash d2firewall.sh -a sniff ```
 #### Load: load the saved iptables firewall configuration (you don't need to worry about this)
 ``` bash d2firewall.sh -a load ```
