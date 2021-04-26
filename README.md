@@ -24,7 +24,7 @@
 ### Details:
 #### This script is written to work in a Ubuntu system with an iptables firewall and openvpn. 
 #### The first two systems added must be the hosts of each fireteam.
-#### Every time you want to invite players to the fireteam you must stop the firewall first. Sniff the IDs of the new members and add them. Once the fireteam is ready start the firewall back up. This is not necessary if you use auto sniffing.
+#### Every time you want to invite players to the fireteam you must stop the firewall first. Sniff the IDs of the new members and add them. Once the fireteam is ready start the firewall back up. (This step is not necessary if you use auto sniffing.)
 #### This is tested to work on PSN, it may work on Xbox and Steam. If you encounter any issues feel free to make an issue.
 #### Also please do not run this on your personal computer it will clobber your firewall rules. It is meant to be run on an isolated vps/cloud instance.
 #### Credits to inchenzo & BasRaayman.
