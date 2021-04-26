@@ -14,7 +14,7 @@ done
 
 if ! command -v jq &> /dev/null
 then
-    sudo apt install jq
+    sudo apt install jq -y
 fi
 
 reset_ip_tables () {
