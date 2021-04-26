@@ -10,11 +10,11 @@
 ``` sudo bash d2firewall.sh -a stop ```
 #### Start: enable the reject rule
 ``` sudo bash d2firewall.sh -a start ```
-#### Add: add a sniffed id to your firewall
+#### Add: add a sniffed id to your firewall (run initial setup again before runing this for the first time)
 ``` sudo bash d2firewall.sh -a add ```
-#### Remove: remove ids from the end of the list
+#### Remove: remove ids from the end of the list (run initial setup again before runing this for the first time)
 ``` sudo bash d2firewall.sh -a remove ```
-#### Sniff: Auto sniff for psn. Once run your buddies must join within 60 seconds. Should only be run after initial setup. Install jq prior to using this with ```sudo apt-get install jq```.
+#### Sniff: Auto sniff for psn. Once run your buddies must join within 60 seconds. (run initial setup again before runing this for the first time)
 ``` sudo bash d2firewall.sh -a sniff ```
 #### Load: load the saved iptables firewall configuration (you don't need to worry about this)
 ``` sudo bash d2firewall.sh -a load ```
