@@ -168,7 +168,7 @@ elif [ "$action" == "sniff" ]; then
     exit 1
   fi
   bash d2firewall.sh -a stop
-  tshark -i tun0 -q -f "udp" -x -Y "frame contains $sys" -T json -e data.data -a duration:10 -x > packets.json
+  tshark -i tun0 -q -f "udp" -x -Y "frame contains $sys" -T json -e data.data -a duration:30 -x > packets.json
   json=$(cat packets.json)
   for row in $(echo "${json}" | jq -r '.[] | @base64'); do
     _jq() {
