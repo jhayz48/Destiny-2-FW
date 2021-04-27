@@ -70,9 +70,9 @@ setup () {
 
 
   ids=()
-  read -p "Would you like to sniff the ID automatically?(psn only) y/n: " yn
+  read -p "Would you like to sniff the ID automatically?(psn/xbox only) y/n: " yn
   yn=${yn:-"y"}
-  if [ $platform != "psn" ]; then
+  if ! [[ $platform =~ ^(psn|xbox)$ ]]; then
     yn="n"
   fi
   echo "n" >> /tmp/data.txt
@@ -206,24 +206,18 @@ elif [ "$action" == "sniff" ]; then
   echo "Have your buddies join you in orbit. You have $SNIFF_TIMEOUT seconds."
   sys=$(sed -n '1p' < data.txt)
   sys=$(get_platform $sys)
-  if [ $sys != "psn-4" ]; then
-    echo "only psn is supported atm"
+  if ! [[ $sys =~ ^(psn-4|xboxpwid)$ ]]; then
+      echo "only psn and xbox are supported atm"
     exit 1
   fi
   bash d2firewall.sh -a stop
-  sudo tshark -i tun0 -q -f "udp" -x -Y "frame contains $sys" -T json -e data.data -a duration:$SNIFF_TIMEOUT -x > /tmp/packets.json
-  json=$(cat /tmp/packets.json)
-  for row in $(echo "${json}" | jq -r '.[] | @base64'); do
-    _jq() {
-     echo ${row} | base64 --decode | jq -r ${1}
-    }
-    echo $(_jq '._source.layers."data.data"[0]') | xxd -r -p | grep -Pao "$sys.{15}" | grep -o '.......$' >> data.txt
-  done
-  cat data.txt | awk '!a[$0]++' > /tmp/data.txt && mv /tmp/data.txt ./data.txt
-  n=$(tail -n +5 data.txt | wc -l)
-  sed -i "4c$n" data.txt
-  rm /tmp/packets.json
-  bash d2firewall.sh -a setup < data.txt
+  sudo tshark -i tun0 -x -Y 'udp matches "$sys"' -a duration:$SNIFF_TIMEOUT > /tmp/data.txt
+  if [ $platform == "psn" ]; then
+    awk '{print $NF}' data.txt | tr -d '\n'| grep -o -P 'psn-4.[A-F0-9]{15}' | uniq >> data.txt
+  elif [ $platform == "xbox" ]; then
+    awk '{print $NF}' data.txt | tr -d '\n'| grep -E -o "psn-4[[:xdigit:]]{15}" | uniq >> data.txt
+  fi
+bash d2firewall.sh -a setup < data.txt
 elif [ "$action" == "load" ]; then
   echo "loading rules"
   iptables-restore < /etc/iptables/rules.v4
