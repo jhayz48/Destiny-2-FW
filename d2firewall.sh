@@ -101,13 +101,13 @@ setup () {
     rm /tmp/ids.txt
     rm /tmp/packets.json
   else
-    read -p "How many systems are you using for this? " snum
+    read -p "How many accounts are you using for this? " snum
     echo $snum >> /tmp/data.txt
     for ((i = 0; i < snum; i++))
     do 
       num=$(( $i + 1 ))
       idf="system$num"
-      read -p "Enter the sniffed ID for System $num: " sid
+      read -p "Enter the sniffed ID for Account $num: " sid
       echo $sid >> /tmp/data.txt
       ids+=( "$idf;$sid" )
     done
