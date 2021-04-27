@@ -215,7 +215,7 @@ elif [ "$action" == "sniff" ]; then
   if [ $platform == "psn" ]; then
     awk '{print $NF}' data.txt | tr -d '\n'| grep -o -P 'psn-4.[A-F0-9]{15}' | uniq >> data.txt
   elif [ $platform == "xbox" ]; then
-    awk '{print $NF}' data.txt | tr -d '\n'| grep -E -o "psn-4[[:xdigit:]]{15}" | uniq >> data.txt
+    awk '{print $NF}' data.txt | tr -d '\n'| grep -o -P 'xboxpwid:.[A-F0-9]{31}' | uniq >> data.txt
   fi
 bash d2firewall.sh -a setup < data.txt
 elif [ "$action" == "load" ]; then
