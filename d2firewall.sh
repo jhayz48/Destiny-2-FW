@@ -67,7 +67,7 @@ setup () {
   echo $net >> /tmp/data.txt
 
   ids=()
-  read -p "Would you like to sniff the ID automatically?(psn/xbox only) y/n: " yn
+  read -p "Would you like to sniff the ID automatically?(psn/xbox/steam) y/n: " yn
   yn=${yn:-"y"}
   if ! [[ $platform =~ ^(psn|xbox|steam)$ ]]; then
     yn="n"
