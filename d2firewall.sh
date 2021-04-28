@@ -102,7 +102,7 @@ setup () {
     #rm /tmp/tmp.txt
   else #add ids manually
     read -p "How many accounts are you using for this? " snum
-    if [ "$num" -lt 1 ]; then
+    if [ $snum -lt 1 ]; then
       echo "Enter a number greater than 0"
       exit 1;
     fi;
@@ -205,7 +205,7 @@ elif [ "$action" == "remove" ]; then
   echo "$list"
   total=$(echo "$list" | wc -l)
   read -p "How many IDs do you want to remove from the end of this list? " num
-  if [[ "$num" -gt 0 && "$num" -le $total ]]; then
+  if [[ $num -gt 0 && $num -le $total ]]; then
     head -n -"$num" data.txt > /tmp/data.txt && mv /tmp/data.txt ./data.txt
     n=$(sed -n '4p' < data.txt)
     n=$((n-num))
