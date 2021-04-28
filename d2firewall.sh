@@ -17,7 +17,7 @@ done
 
 reset_ip_tables () {
   sudo service iptables restart
-  
+
   #reset iptables to default
   sudo iptables -P INPUT ACCEPT
   sudo iptables -P FORWARD ACCEPT
@@ -236,6 +236,9 @@ elif [ "$action" == "sniff" ]; then
   bash d2firewall.sh -a setup < data.txt
 elif [ "$action" == "list" ]; then
   tail -n +5 data.txt | cat -n
+elif [ "$action" == "update" ]; then
+  wget -q https://raw.githubusercontent.com/cloudex99/Destiny-2-Matchmaking-Firewall/main/d2firewall.sh -O ./d2firewall.sh
+  echo "Script update complete."
 elif [ "$action" == "load" ]; then
   echo "loading rules"
   iptables-restore < /etc/iptables/rules.v4
