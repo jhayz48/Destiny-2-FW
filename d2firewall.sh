@@ -72,9 +72,11 @@ install_dependencies () {
     sudo cp /root/client.ovpn /var/www/html/client.ovpn
     ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
     echo -e "${GREEN}You can download the openvpn config from ${BLUE}http://$ip/client.ovpn"
-    echo -e "${GREEN}It will be deleted automatically in 10 minutes for security reasons."
+    echo -e "${GREEN}If you are unable to access this file, you may need to allow/open the http port 80 with your vps provider."
+    echo -e "Otherwise you can always run the command cat /root/client.ovpn and copy/paste ALL of its contents in a file on your PC."
+    echo -e "It will be deleted automatically in 15 minutes for security reasons."
     echo -e "Be sure to import this config to your router and connect your consoles before proceeding any further.${NC}"
-    nohup bash -c 'sleep 600 && sudo service nginx stop && sudo apt remove nginx -y && sudo rm /var/www/html/client.ovpn' &>/dev/null &
+    nohup bash -c 'sleep 900 && sudo service nginx stop && sudo apt remove nginx -y && sudo rm /var/www/html/client.ovpn' &>/dev/null &
   else
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q install iptables iptables-persistent wireshark tshark > /dev/null
   fi
