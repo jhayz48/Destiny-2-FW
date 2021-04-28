@@ -16,6 +16,10 @@
 ``` sudo bash d2firewall.sh -a remove ```
 #### Sniff: Auto sniff for psn. Once run your buddies must join within 60 seconds. (run initial setup again before runing this for the first time)
 ``` sudo bash d2firewall.sh -a sniff ```
+#### List: List the current accounts
+``` sudo bash d2firewall.sh -a list ```
+#### Update: Update the script to the newest version.
+``` sudo bash d2firewall.sh -a update ```
 #### Load: load the saved iptables firewall configuration (you don't need to worry about this)
 ``` sudo bash d2firewall.sh -a load ```
 #### Reset: reset iptables to default
