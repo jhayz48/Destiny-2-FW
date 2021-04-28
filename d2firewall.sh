@@ -1,8 +1,7 @@
 #!/bin/bash
-
 #credits to @BasRaayman and @inchenzo
 
-SNIFF_TIMEOUT=60
+INTERFACE="tun0"
 DEFAULT_NET="10.8.0.0/24"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -93,7 +92,7 @@ setup () {
   reject_str=$(get_platform_match_str $platform)
   echo $platform > /tmp/data.txt
 
-  read -p "Enter your network/netmask default is 10.8.0.0/24 for openvpn: " net
+  read -p "Enter your network/netmask: " net
   net=$(echo "$net" | xargs)
   net=${net:-$DEFAULT_NET}
   echo $net >> /tmp/data.txt
@@ -108,16 +107,25 @@ setup () {
 
   #auto sniffer
   if [ "$yn" == "y" ]; then
-    echo -e "${RED}Sniffing for $SNIFF_TIMEOUT seconds. Join up in orbit quick.${NC}"
-    pmatch=$(get_platform_match_str $platform)
-    sudo tshark -i tun0 -f "udp" -x -Y "udp matches $pmatch" -a duration:$SNIFF_TIMEOUT > /tmp/tmp.txt
+
+    echo -e "${RED}Press any key to stop sniffing.${NC}"
+    sleep 1
     if [ $platform == "psn" ]; then
-      awk '{print $NF}' /tmp/tmp.txt | tr -d '\n'| grep -o -P 'psn-4[A-F0-9]{8}\K[A-F0-9]{7}' >> /tmp/data.txt
+      ngrep -l -q -W byline -d $INTERFACE "psn-4" udp | grep --line-buffered -o -P 'psn-4[0]{8}\K[A-F0-9]{7}' | tee -a /tmp/data.txt &
     elif [ $platform == "xbox" ]; then
-      awk '{print $NF}' /tmp/tmp.txt | tr -d '\n'| grep -o -P 'xboxpwid:[A-F0-9]{24}\K[A-F0-9]{8}' >> /tmp/data.txt
+      ngrep -l -q -W byline -d $INTERFACE "xboxpwid:" udp | grep --line-buffered -o -P 'xboxpwid:[A-F0-9]{24}\K[A-F0-9]{8}' | tee -a /tmp/data.txt &
     elif [ $platform == "steam" ]; then
-      awk '{print $NF}' /tmp/tmp.txt | tr -d '\n'| grep -o -P 'steamid:[0-9]{7}\K[0-9]{10}' >> /tmp/data.txt
+      ngrep -l -q -W byline -d $INTERFACE "steamid:" udp | grep --line-buffered -o -P 'steamid:[0-9]{7}\K[0-9]{10}' | tee -a /tmp/data.txt &
     fi
+
+    while [ true ] ; do
+      read -t 1 -n 1
+      if [ $? = 0 ] ; then
+        break
+      fi
+    done
+    pkill -15 ngrep
+
     #remove duplicates
     awk '!a[$0]++' /tmp/data.txt > /tmp/tmp.txt && mv /tmp/tmp.txt /tmp/data.txt
     #get number of accounts
@@ -253,21 +261,33 @@ elif [ "$action" == "sniff" ]; then
       echo "Only psn,xbox, and steam are supported atm."
     exit 1
   fi
-  echo -e "${RED}Have your buddies join you in orbit. You have $SNIFF_TIMEOUT seconds.${NC}"
-  echo "DO NOT CTRL C. Wait for it to finish."
   bash d2firewall.sh -a stop
-  pmatch=$(get_platform_match_str $platform)
-  sudo tshark -i tun0 -f "udp" -x -Y "udp matches $pmatch" -a duration:$SNIFF_TIMEOUT > /tmp/tmp.txt
+
+  #auto sniff
+  echo -e "${RED}Press any key to stop sniffing.${NC}"
+  sleep 1
   if [ $platform == "psn" ]; then
-    awk '{print $NF}' /tmp/tmp.txt | tr -d '\n'| grep -o -P 'psn-4[A-F0-9]{8}\K[A-F0-9]{7}' >> data.txt
+    ngrep -l -q -W byline -d $INTERFACE "psn-4" udp | grep --line-buffered -o -P 'psn-4[0]{8}\K[A-F0-9]{7}' | tee -a data.txt &
   elif [ $platform == "xbox" ]; then
-    awk '{print $NF}' /tmp/tmp.txt | tr -d '\n'| grep -o -P 'xboxpwid:[A-F0-9]{24}\K[A-F0-9]{8}' >> data.txt
+    ngrep -l -q -W byline -d $INTERFACE "xboxpwid:" udp | grep --line-buffered -o -P 'xboxpwid:[A-F0-9]{24}\K[A-F0-9]{8}' | tee -a data.txt &
   elif [ $platform == "steam" ]; then
-    awk '{print $NF}' /tmp/tmp.txt | tr -d '\n'| grep -o -P 'steamid:[A-F0-9]{9}\K[A-F0-9]{8}' >> data.txt
+    ngrep -l -q -W byline -d $INTERFACE "steamid:" udp | grep --line-buffered -o -P 'steamid:[0-9]{7}\K[0-9]{10}' | tee -a data.txt &
   fi
-  awk '!a[$0]++' data.txt > /tmp/data.txt && mv /tmp/data.txt ./data.txt && rm /tmp/tmp.txt
+  while [ true ] ; do
+    read -t 1 -n 1
+    if [ $? = 0 ] ; then
+      break
+    fi
+  done
+  pkill -15 ngrep
+
+  #remove duplicates
+  awk '!a[$0]++' data.txt > /tmp/data.txt && mv /tmp/data.txt ./data.txt
+
+  #update total number of ids
   n=$(tail -n +5 data.txt | wc -l)
   sed -i "4c$n" data.txt
+
   bash d2firewall.sh -a setup < data.txt
 elif [ "$action" == "list" ]; then
   tail -n +5 data.txt | cat -n
