@@ -3,49 +3,48 @@
 #credits to @BasRaayman and @inchenzo
 
 SNIFF_TIMEOUT=60
+DEFAULT_NET="10.8.0.0/24"
+RED='\033[0;31m'
+NC='\033[0m'
 
 while getopts "a:" opt; do
   case $opt in
     a) action=$OPTARG ;;
-    *) echo 'error' >&2
+    *) echo 'Not a valid command' >&2
        exit 1
   esac
 done
 
-if ! command -v jq &> /dev/null
-then
-    sudo apt install jq -y
-fi
-
 reset_ip_tables () {
+  sudo service iptables restart
+  
   #reset iptables to default
   sudo iptables -P INPUT ACCEPT
   sudo iptables -P FORWARD ACCEPT
   sudo iptables -P OUTPUT ACCEPT
 
-  #sudo iptables -t nat -F
-  #sudo iptables -t mangle -F
-  
   sudo iptables -F
   sudo iptables -X
 
   #allow openvpn
-  if ! sudo iptables-save | grep -q "POSTROUTING -s 10.8.0.0/24"; then
-    sudo iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
+  if ip a | grep -q "tun0"; then
+    if ! sudo iptables-save | grep -q "POSTROUTING -s 10.8.0.0/24"; then
+      sudo iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
+    fi
+    sudo iptables -A INPUT -p udp -m udp --dport 1194 -j ACCEPT
+    sudo iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
+    sudo iptables -A FORWARD -s 10.8.0.0/24 -j ACCEPT
   fi
-  sudo iptables -A INPUT -p udp -m udp --dport 1194 -j ACCEPT
-  sudo iptables -A FORWARD -m state --state RELATED,ESTABLISHED -j ACCEPT
-  sudo iptables -A FORWARD -s 10.8.0.0/24 -j ACCEPT
 }
 
-get_platform () {
+get_platform_match_str () {
   local val="psn-4"
   if [ "$1" == "psn" ]; then
     val="psn-4"
   elif [ "$1" == "xbox" ]; then
-    val="xboxpwid"
+    val="xboxpwid:"
   elif [ "$1" == "steam" ]; then
-    val="steamid"
+    val="steamid:"
   fi
   echo $val
 }
@@ -56,58 +55,64 @@ setup () {
   reset_ip_tables
 
   read -p "Enter your platform xbox, psn, steam: " platform
+  platform=$(echo "$platform" | xargs)
   platform=${platform:-"psn"}
 
-  reject_str=$(get_platform $platform)
-
+  reject_str=$(get_platform_match_str $platform)
   echo $platform > /tmp/data.txt
 
-  default_net="10.8.0.0/24"
   read -p "Enter your network/netmask default is 10.8.0.0/24 for openvpn: " net
-  net=${net:-$default_net}
-  default_net=$net
+  net=$(echo "$net" | xargs)
+  net=${net:-$DEFAULT_NET}
   echo $net >> /tmp/data.txt
-
 
   ids=()
   read -p "Would you like to sniff the ID automatically?(psn/xbox only) y/n: " yn
   yn=${yn:-"y"}
-  if ! [[ $platform =~ ^(psn|xbox)$ ]]; then
+  if ! [[ $platform =~ ^(psn|xbox|steam)$ ]]; then
     yn="n"
   fi
   echo "n" >> /tmp/data.txt
 
+  #auto sniffer
   if [ "$yn" == "y" ]; then
-    echo "Sniffing for $SNIFF_TIMEOUT seconds. Join up in orbit quick. "
-    sudo tshark -i tun0 -q -f "udp" -x -Y "frame contains $reject_str" -T json -e data.data -a duration:$SNIFF_TIMEOUT -x > /tmp/packets.json
-    json=$(cat /tmp/packets.json)
-    for row in $(echo "${json}" | jq -r '.[] | @base64'); do
-      _jq() {
-        echo ${row} | base64 --decode | jq -r ${1}
-      }
-      echo $(_jq '._source.layers."data.data"[0]') | xxd -r -p | grep -Pao "$reject_str.{15}" | grep -o '.......$' >> /tmp/tmp.txt
-    done
-    cat /tmp/tmp.txt | awk '!a[$0]++' > /tmp/ids.txt
-    snum=$(cat /tmp/ids.txt | wc -l)
-    echo $snum >> /tmp/data.txt
-    cat /tmp/ids.txt >> /tmp/data.txt
+    echo -e "${RED}Sniffing for $SNIFF_TIMEOUT seconds. Join up in orbit quick.${NC}"
+    pmatch=$(get_platform_match_str $platform)
+    sudo tshark -i tun0 -f "udp" -x -Y "udp matches $pmatch" -a duration:$SNIFF_TIMEOUT > /tmp/tmp.txt
+    if [ $platform == "psn" ]; then
+      awk '{print $NF}' /tmp/tmp.txt | tr -d '\n'| grep -o -P 'psn-4[A-F0-9]{8}\K[A-F0-9]{7}' >> /tmp/data.txt
+    elif [ $platform == "xbox" ]; then
+      awk '{print $NF}' /tmp/tmp.txt | tr -d '\n'| grep -o -P 'xboxpwid:[A-F0-9]{24}\K[A-F0-9]{8}' >> /tmp/data.txt
+    elif [ $platform == "steam" ]; then
+      awk '{print $NF}' /tmp/tmp.txt | tr -d '\n'| grep -o -P 'steamid:[0-9]{7}\K[0-9]{10}' >> /tmp/data.txt
+    fi
+    #remove duplicates
+    awk '!a[$0]++' /tmp/data.txt > /tmp/tmp.txt && mv /tmp/tmp.txt /tmp/data.txt
+    #get number of accounts
+    snum=$(tail -n +4 /tmp/data.txt | wc -l)
+    awk "NR==4{print $snum}1" /tmp/data.txt > /tmp/tmp.txt && mv /tmp/tmp.txt /tmp/data.txt
+    #get ids and add to ads array with identifier
+    tmp_ids=$(tail -n +5 /tmp/data.txt)
     c=1
-    while read line; do
+    while IFS= read -r line; do 
       idf="system$c"
       ids+=( "$idf;$line" )
       ((c++))
-    done </tmp/ids.txt
-    rm /tmp/tmp.txt
-    rm /tmp/ids.txt
-    rm /tmp/packets.json
-  else
+    done <<< "$tmp_ids"
+    #rm /tmp/tmp.txt
+  else #add ids manually
     read -p "How many accounts are you using for this? " snum
+    if [ "$num" -lt 1 ]; then
+      echo "Enter a number greater than 0"
+      exit 1;
+    fi;
     echo $snum >> /tmp/data.txt
     for ((i = 0; i < snum; i++))
     do 
       num=$(( $i + 1 ))
       idf="system$num"
       read -p "Enter the sniffed ID for Account $num: " sid
+      sid=$(echo "$sid" | xargs)
       echo $sid >> /tmp/data.txt
       ids+=( "$idf;$sid" )
     done
@@ -144,16 +149,16 @@ setup () {
     do
       if [ "$i" != "$j" ]; then
         if [[ $INDEX1 -eq 1 && $INDEX2 -eq 2 ]]; then
-          net=$default_net
+          inet=$net
         elif [[ $INDEX1 -eq 2 && $INDEX2 -eq 1 ]]; then
-          net=$default_net
+          inet=$net
         elif [[ $INDEX1 -gt 2 && $INDEX2 -lt 3 ]]; then
-          net=$default_net
+          inet=$net
         else
-          net="0.0.0.0/0"
+          inet="0.0.0.0/0"
         fi
         IFS=';' read -r -a idx <<< "$j"
-        sudo iptables -A "${id[0]}" -s $net -p udp -m string --string "${idx[1]}" --algo bm -j ACCEPT
+        sudo iptables -A "${id[0]}" -s $inet -p udp -m string --string "${idx[1]}" --algo bm -j ACCEPT
       fi
       ((INDEX2++))
     done
@@ -162,18 +167,18 @@ setup () {
 
   iptables-save > /etc/iptables/rules.v4
 
-  echo "setup complete and firewall is active"
+  echo "setup complete and matchmaking firewall is active"
 }
 
 if [ "$action" == "setup" ]; then
   setup
 elif [ "$action" == "stop" ]; then
-  echo "disabling reject rule"
+  echo "Matchmaking is no longer restricted."
   reject=$(<reject.rule)
   sudo iptables -D FORWARD $reject
 elif [ "$action" == "start" ]; then
   if ! sudo iptables-save | grep -q "REJECT"; then
-    echo "enabling reject rule"
+    echo "Matchmaking is now being restricted."
     pos=$(iptables -L FORWARD | grep "system" | wc -l)
     ((pos++))
     reject=$(<reject.rule)
@@ -181,6 +186,7 @@ elif [ "$action" == "start" ]; then
   fi
 elif [ "$action" == "add" ]; then
   read -p "Enter the sniffed ID: " id
+  id=$(echo "$id" | xargs)
   if [ ! -z "$id" ]; then
     echo $id >> data.txt
     n=$(sed -n '4p' < data.txt)
@@ -195,29 +201,41 @@ elif [ "$action" == "add" ]; then
     fi
   fi
 elif [ "$action" == "remove" ]; then
-  tail -n +5 data.txt | cat -n
+  list=$(tail -n +5 data.txt | cat -n)
+  echo "$list"
+  total=$(echo "$list" | wc -l)
   read -p "How many IDs do you want to remove from the end of this list? " num
-  head -n -"$num" data.txt > /tmp/data.txt && mv /tmp/data.txt ./data.txt
-  n=$(sed -n '4p' < data.txt)
-  n=$((n-num))
-  sed -i "4c$n" data.txt
-  bash d2firewall.sh -a setup < data.txt
+  if [[ "$num" -gt 0 && "$num" -le $total ]]; then
+    head -n -"$num" data.txt > /tmp/data.txt && mv /tmp/data.txt ./data.txt
+    n=$(sed -n '4p' < data.txt)
+    n=$((n-num))
+    sed -i "4c$n" data.txt
+    bash d2firewall.sh -a setup < data.txt
+  fi;
 elif [ "$action" == "sniff" ]; then
-  echo "Have your buddies join you in orbit. You have $SNIFF_TIMEOUT seconds."
-  sys=$(sed -n '1p' < data.txt)
-  sys=$(get_platform $sys)
-  if ! [[ $sys =~ ^(psn-4|xboxpwid)$ ]]; then
-      echo "only psn and xbox are supported atm"
+  platform=$(sed -n '1p' < data.txt)
+  if ! [[ $platform =~ ^(psn|xbox|steam)$ ]]; then
+      echo "Only psn,xbox, and steam are supported atm."
     exit 1
   fi
+  echo -e "${RED}Have your buddies join you in orbit. You have $SNIFF_TIMEOUT seconds.${NC}"
+  echo "DO NOT CTRL C. Wait for it to finish."
   bash d2firewall.sh -a stop
-  sudo tshark -i tun0 -x -Y 'udp matches "$sys"' -a duration:$SNIFF_TIMEOUT > /tmp/data.txt
+  pmatch=$(get_platform_match_str $platform)
+  sudo tshark -i tun0 -f "udp" -x -Y "udp matches $pmatch" -a duration:$SNIFF_TIMEOUT > /tmp/tmp.txt
   if [ $platform == "psn" ]; then
-    awk '{print $NF}' data.txt | tr -d '\n'| grep -o -P 'psn-4.[A-F0-9]{15}' | uniq >> data.txt
+    awk '{print $NF}' /tmp/tmp.txt | tr -d '\n'| grep -o -P 'psn-4[A-F0-9]{8}\K[A-F0-9]{7}' >> data.txt
   elif [ $platform == "xbox" ]; then
-    awk '{print $NF}' data.txt | tr -d '\n'| grep -o -P 'xboxpwid:.[A-F0-9]{31}' | uniq >> data.txt
+    awk '{print $NF}' /tmp/tmp.txt | tr -d '\n'| grep -o -P 'xboxpwid:[A-F0-9]{24}\K[A-F0-9]{8}' >> data.txt
+  elif [ $platform == "steam" ]; then
+    awk '{print $NF}' /tmp/tmp.txt | tr -d '\n'| grep -o -P 'steamid:[A-F0-9]{9}\K[A-F0-9]{8}' >> data.txt
   fi
-bash d2firewall.sh -a setup < data.txt
+  awk '!a[$0]++' data.txt > /tmp/data.txt && mv /tmp/data.txt ./data.txt && rm /tmp/tmp.txt
+  n=$(tail -n +5 data.txt | wc -l)
+  sed -i "4c$n" data.txt
+  bash d2firewall.sh -a setup < data.txt
+elif [ "$action" == "list" ]; then
+  tail -n +5 data.txt | cat -n
 elif [ "$action" == "load" ]; then
   echo "loading rules"
   iptables-restore < /etc/iptables/rules.v4
