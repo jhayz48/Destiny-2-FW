@@ -14,7 +14,7 @@
 ``` sudo bash d2firewall.sh -a add ```
 #### Remove: remove ids from the end of the list (run initial setup again before runing this for the first time)
 ``` sudo bash d2firewall.sh -a remove ```
-#### Sniff: Auto sniff for psn. Once run your buddies must join within 60 seconds. (run initial setup again before runing this for the first time)
+#### Sniff: Auto sniff for psn. Once run your buddies must join within 60 seconds. (run initial setup before runing this for the first time)
 ``` sudo bash d2firewall.sh -a sniff ```
 #### List: List the current accounts
 ``` sudo bash d2firewall.sh -a list ```
