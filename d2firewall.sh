@@ -82,7 +82,7 @@ install_dependencies () {
 }
 
 setup () {
-  echo "Setting firewall rules."
+  echo "Setting up firewall rules."
   reset_ip_tables
 
   read -p "Enter your platform xbox, psn, steam: " platform
@@ -206,7 +206,7 @@ setup () {
 
   iptables-save > /etc/iptables/rules.v4
 
-  echo "setup complete and matchmaking firewall is active"
+  echo "Setup is complete and matchmaking firewall is now active."
 }
 
 if [ "$action" == "setup" ]; then
@@ -216,7 +216,7 @@ if [ "$action" == "setup" ]; then
   fi
   setup
 elif [ "$action" == "stop" ]; then
-  echo "Matchmaking is no longer restricted."
+  echo "Matchmaking is no longer being restricted."
   reject=$(<reject.rule)
   sudo iptables -D FORWARD $reject
 elif [ "$action" == "start" ]; then
@@ -296,9 +296,13 @@ elif [ "$action" == "update" ]; then
   chmod +x ./d2firewall.sh
   echo "Script update complete."
 elif [ "$action" == "load" ]; then
-  echo "loading rules"
-  iptables-restore < /etc/iptables/rules.v4
+  echo "Loading firewall rules."
+  if [ -f ./data.txt ]; then
+      bash d2firewall.sh -a setup < ./data.txt
+  else
+    iptables-restore < /etc/iptables/rules.v4
+  fi
 elif [ "$action" == "reset" ]; then
-  echo "erasing all rules"
+  echo "Erasing all firewall rules."
   reset_ip_tables
 fi
