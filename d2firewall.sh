@@ -54,15 +54,19 @@ install_dependencies () {
   sudo sysctl -w net.ipv4.ip_forward=1 > /dev/null
   sudo ufw disable > /dev/null
 
-  echo -e -n "${GREEN}Would you like to install OpenVPN?${NC} y/n: "
-  read yn
-  yn=${yn:-"y"}
+  if ip a | grep -q "tun0"; then
+    yn="n"
+  else 
+    echo -e -n "${GREEN}Would you like to install OpenVPN?${NC} y/n: "
+    read yn
+    yn=${yn:-"y"}
+  fi
 
   echo -e "${RED}Installing dependencies. Please wait while it finishes...${NC}"
   sudo apt-get update > /dev/null
   
   if [ "$yn" == "y" ]; then
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q install iptables iptables-persistent wireshark tshark nginx > /dev/null
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q install iptables iptables-persistent ngrep nginx > /dev/null
     echo -e "${RED}Installing OpenVPN. Please wait while it finishes...${NC}"
     sudo wget -q https://git.io/vpn -O openvpn-ubuntu-install.sh
     sudo chmod +x ./openvpn-ubuntu-install.sh
@@ -77,7 +81,7 @@ install_dependencies () {
     echo -e "Be sure to import this config to your router and connect your consoles before proceeding any further.${NC}"
     nohup bash -c 'sleep 900 && sudo service nginx stop && sudo apt remove nginx -y && sudo rm /var/www/html/client.ovpn' &>/dev/null &
   else
-    sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q install iptables iptables-persistent wireshark tshark > /dev/null
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q install iptables iptables-persistent ngrep > /dev/null
   fi
 }
 
@@ -210,7 +214,7 @@ setup () {
 }
 
 if [ "$action" == "setup" ]; then
-  if ! command -v tshark &> /dev/null
+  if ! command -v ngrep &> /dev/null
   then
       install_dependencies
   fi
