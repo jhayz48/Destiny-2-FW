@@ -108,7 +108,7 @@ setup () {
   #auto sniffer
   if [ "$yn" == "y" ]; then
 
-    echo -e "${RED}Press any key to stop sniffing.${NC}"
+    echo -e "${RED}Press any key to stop sniffing. DO NOT CTRL C${NC}"
     sleep 1
     if [ $platform == "psn" ]; then
       ngrep -l -q -W byline -d $INTERFACE "psn-4" udp | grep --line-buffered -o -P 'psn-4[0]{8}\K[A-F0-9]{7}' | tee -a /tmp/data.txt &
@@ -264,7 +264,8 @@ elif [ "$action" == "sniff" ]; then
   bash d2firewall.sh -a stop
 
   #auto sniff
-  echo -e "${RED}Press any key to stop sniffing.${NC}"
+  echo -e "${RED}Press any key to stop sniffing. DO NOT CTRL C${NC}"
+
   sleep 1
   if [ $platform == "psn" ]; then
     ngrep -l -q -W byline -d $INTERFACE "psn-4" udp | grep --line-buffered -o -P 'psn-4[0]{8}\K[A-F0-9]{7}' | tee -a data.txt &
