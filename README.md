@@ -6,9 +6,9 @@
 ## Usage
 #### Setup: initial setup
 ``` sudo bash d2firewall.sh -a setup ```
-#### Stop: disable the reject rule 
+#### Stop: Enables public matchmaking 
 ``` sudo bash d2firewall.sh -a stop ```
-#### Start: enable the reject rule
+#### Start: Disables public matchmaking
 ``` sudo bash d2firewall.sh -a start ```
 #### Add: add a sniffed id to your firewall (run initial setup again before runing this for the first time)
 ``` sudo bash d2firewall.sh -a add ```
