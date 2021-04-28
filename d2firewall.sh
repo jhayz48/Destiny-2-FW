@@ -5,6 +5,8 @@
 SNIFF_TIMEOUT=60
 DEFAULT_NET="10.8.0.0/24"
 RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
 NC='\033[0m'
 
 while getopts "a:" opt; do
@@ -49,9 +51,37 @@ get_platform_match_str () {
   echo $val
 }
 
-setup () {
-  echo "setting up rules"
+install_dependencies () {
+  sudo sysctl -w net.ipv4.ip_forward=1 > /dev/null
+  sudo ufw disable > /dev/null
 
+  echo -e -n "${GREEN}Would you like to install OpenVPN?${NC} y/n: "
+  read yn
+  yn=${yn:-"y"}
+
+  echo -e "${RED}Installing dependencies. Please wait while it finishes...${NC}"
+  sudo apt-get update > /dev/null
+  
+  if [ "$yn" == "y" ]; then
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q install iptables iptables-persistent wireshark tshark nginx > /dev/null
+    echo -e "${RED}Installing OpenVPN. Please wait while it finishes...${NC}"
+    sudo wget -q https://git.io/vpn -O openvpn-ubuntu-install.sh
+    sudo chmod +x ./openvpn-ubuntu-install.sh
+    (APPROVE_INSTALL=y APPROVE_IP=y IPV6_SUPPORT=n PORT_CHOICE=1 PROTOCOL_CHOICE=1 DNS=1 COMPRESSION_ENABLED=n CUSTOMIZE_ENC=n CLIENT=client PASS=1 ./openvpn-ubuntu-install.sh) &
+    wait;
+    sudo cp /root/client.ovpn /var/www/html/client.ovpn
+    ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
+    echo -e "${GREEN}You can download the openvpn config from ${BLUE}http://$ip/client.ovpn"
+    echo -e "${GREEN}It will be deleted automatically in 10 minutes for security reasons."
+    echo -e "Be sure to import this config to your router and connect your consoles before proceeding any further.${NC}"
+    nohup bash -c 'sleep 600 && sudo service nginx stop && sudo apt remove nginx -y && sudo rm /var/www/html/client.ovpn' &>/dev/null &
+  else
+    sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q install iptables iptables-persistent wireshark tshark > /dev/null
+  fi
+}
+
+setup () {
+  echo "Setting firewall rules."
   reset_ip_tables
 
   read -p "Enter your platform xbox, psn, steam: " platform
@@ -103,7 +133,6 @@ setup () {
   else #add ids manually
     read -p "How many accounts are you using for this? " snum
     if [ $snum -lt 1 ]; then
-      echo "Enter a number greater than 0"
       exit 1;
     fi;
     echo $snum >> /tmp/data.txt
@@ -171,6 +200,10 @@ setup () {
 }
 
 if [ "$action" == "setup" ]; then
+  if ! command -v tshark &> /dev/null
+  then
+      install_dependencies
+  fi
   setup
 elif [ "$action" == "stop" ]; then
   echo "Matchmaking is no longer restricted."
