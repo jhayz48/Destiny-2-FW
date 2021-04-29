@@ -131,10 +131,10 @@ setup () {
     pkill -15 ngrep
 
     #remove duplicates
-    awk '!a[$0]++' /tmp/data.txt > /tmp/tmp.txt && mv /tmp/tmp.txt /tmp/data.txt
+    awk '!a[$0]++' /tmp/data.txt > /tmp/temp.txt && mv /tmp/temp.txt /tmp/data.txt
     #get number of accounts
     snum=$(tail -n +4 /tmp/data.txt | wc -l)
-    awk "NR==4{print $snum}1" /tmp/data.txt > /tmp/tmp.txt && mv /tmp/tmp.txt /tmp/data.txt
+    awk "NR==4{print $snum}1" /tmp/data.txt > /tmp/temp.txt && mv /tmp/temp.txt /tmp/data.txt
     #get ids and add to ads array with identifier
     tmp_ids=$(tail -n +5 /tmp/data.txt)
     c=1
@@ -143,7 +143,6 @@ setup () {
       ids+=( "$idf;$line" )
       ((c++))
     done <<< "$tmp_ids"
-    #rm /tmp/tmp.txt
   else #add ids manually
     read -p "How many accounts are you using for this? " snum
     if [ $snum -lt 1 ]; then
@@ -299,7 +298,8 @@ elif [ "$action" == "list" ]; then
 elif [ "$action" == "update" ]; then
   wget -q https://raw.githubusercontent.com/cloudex99/Destiny-2-Matchmaking-Firewall/main/d2firewall.sh -O ./d2firewall.sh
   chmod +x ./d2firewall.sh
-  echo "Script update complete."
+  echo -e "${GREEN}Script update complete."
+  echo -e "Please rerun the initial setup to avoid any issues.${NC}"
 elif [ "$action" == "load" ]; then
   echo "Loading firewall rules."
   if [ -f ./data.txt ]; then
