@@ -31,4 +31,4 @@
 #### If the firewall is active, accounts that are not already in the firewall will be unable to join the fireteam. You can run the auto sniffer to add them.
 #### This is tested to work on PSN, Xbox and Steam. If you encounter any issues feel free to make an issue.
 #### Also please do not run this on your personal computer it will clobber your firewall rules. It is meant to be run on an isolated vps/cloud instance.
-#### Credits to inchenzo & BasRaayman.
+#### Credits to inchenzo & BasRaayman for coming up with the method.
