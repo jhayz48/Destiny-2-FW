@@ -83,6 +83,7 @@ install_dependencies () {
   else
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q install iptables iptables-persistent ngrep > /dev/null
   fi
+
 }
 
 setup () {
@@ -117,9 +118,9 @@ setup () {
     if [ $platform == "psn" ]; then
       ngrep -l -q -W byline -d $INTERFACE "psn-4" udp | grep --line-buffered -o -P 'psn-4[0]{8}\K[A-F0-9]{7}' | tee -a /tmp/data.txt &
     elif [ $platform == "xbox" ]; then
-      ngrep -l -q -W byline -d $INTERFACE "xboxpwid:" udp | grep --line-buffered -o -P 'xboxpwid:[A-F0-9]{22}\K[A-F0-9]{10}' | tee -a /tmp/data.txt &
+      ngrep -l -q -W byline -d $INTERFACE "xboxpwid:" udp | grep --line-buffered -o -P 'xboxpwid:[A-F0-9]{32}' | tee -a /tmp/data.txt &
     elif [ $platform == "steam" ]; then
-      ngrep -l -q -W byline -d $INTERFACE "steamid:" udp | grep --line-buffered -o -P 'steamid:[0-9]{7}\K[0-9]{10}' | tee -a /tmp/data.txt &
+      ngrep -l -q -W byline -d $INTERFACE "steamid:" udp | grep --line-buffered -o -P 'steamid:[0-9]{17}' | tee -a /tmp/data.txt &
     fi
 
     while [ true ] ; do
@@ -273,9 +274,9 @@ elif [ "$action" == "sniff" ]; then
   if [ $platform == "psn" ]; then
     ngrep -l -q -W byline -d $INTERFACE "psn-4" udp | grep --line-buffered -o -P 'psn-4[0]{8}\K[A-F0-9]{7}' | tee -a data.txt &
   elif [ $platform == "xbox" ]; then
-    ngrep -l -q -W byline -d $INTERFACE "xboxpwid:" udp | grep --line-buffered -o -P 'xboxpwid:[A-F0-9]{22}\K[A-F0-9]{10}' | tee -a data.txt &
+    ngrep -l -q -W byline -d $INTERFACE "xboxpwid:" udp | grep --line-buffered -o -P 'xboxpwid:[A-F0-9]{32}' | tee -a data.txt &
   elif [ $platform == "steam" ]; then
-    ngrep -l -q -W byline -d $INTERFACE "steamid:" udp | grep --line-buffered -o -P 'steamid:[0-9]{7}\K[0-9]{10}' | tee -a data.txt &
+    ngrep -l -q -W byline -d $INTERFACE "steamid:" udp | grep --line-buffered -o -P 'steamid:[0-9]{17}' | tee -a data.txt &
   fi
   while [ true ] ; do
     read -t 1 -n 1
