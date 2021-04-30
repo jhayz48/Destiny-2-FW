@@ -6,16 +6,16 @@
 ## Usage
 #### Setup: initial setup
 ``` sudo bash d2firewall.sh -a setup ```
-#### Stop: Enables public matchmaking 
-``` sudo bash d2firewall.sh -a stop ```
+#### Sniff: Auto sniffer. (You must add your 2 host consoles prior to running this)
+``` sudo bash d2firewall.sh -a sniff ```
 #### Start: Disables public matchmaking
 ``` sudo bash d2firewall.sh -a start ```
+#### Stop: Enables public matchmaking 
+``` sudo bash d2firewall.sh -a stop ```
 #### Add: add a sniffed id to your firewall
 ``` sudo bash d2firewall.sh -a add ```
 #### Remove: remove ids from the end of the list
 ``` sudo bash d2firewall.sh -a remove ```
-#### Sniff: Auto sniffer. (You must add your 2 host consoles prior to running this)
-``` sudo bash d2firewall.sh -a sniff ```
 #### List: List the current accounts
 ``` sudo bash d2firewall.sh -a list ```
 #### Update: Update the script to the newest version.
