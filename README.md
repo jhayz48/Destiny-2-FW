@@ -26,7 +26,7 @@
 ``` sudo bash d2firewall.sh -a reset ```
 
 ### Details:
-#### This script is written to work in a Ubuntu system with an iptables firewall and openvpn.
+#### This script is written to work in a Ubuntu System using iptables firewall and openvpn.
 #### The first two systems added must be the hosts of each fireteam.
 #### If the firewall is active, accounts that are not already in the firewall will be unable to join the fireteam. You can run the auto sniffer to add them.
 #### This is tested to work on PSN, Xbox and Steam. If you encounter any issues feel free to make an issue.
