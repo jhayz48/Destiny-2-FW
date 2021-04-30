@@ -102,7 +102,7 @@ setup () {
   echo $net >> /tmp/data.txt
 
   ids=()
-  read -p "Would you like to sniff the ID automatically?(psn/xbox/steam only) y/n: " yn
+  read -p "Would you like to sniff the ID automatically?(psn/xbox/steam) y/n: " yn
   yn=${yn:-"y"}
   if ! [[ $platform =~ ^(psn|xbox|steam)$ ]]; then
     yn="n"
@@ -117,7 +117,7 @@ setup () {
     if [ $platform == "psn" ]; then
       ngrep -l -q -W byline -d $INTERFACE "psn-4" udp | grep --line-buffered -o -P 'psn-4[0]{8}\K[A-F0-9]{7}' | tee -a /tmp/data.txt &
     elif [ $platform == "xbox" ]; then
-      ngrep -l -q -W byline -d $INTERFACE "xboxpwid:" udp | grep --line-buffered -o -P 'xboxpwid:[A-F0-9]{24}\K[A-F0-9]{8}' | tee -a /tmp/data.txt &
+      ngrep -l -q -W byline -d $INTERFACE "xboxpwid:" udp | grep --line-buffered -o -P 'xboxpwid:[A-F0-9]{22}\K[A-F0-9]{10}' | tee -a /tmp/data.txt &
     elif [ $platform == "steam" ]; then
       ngrep -l -q -W byline -d $INTERFACE "steamid:" udp | grep --line-buffered -o -P 'steamid:[0-9]{7}\K[0-9]{10}' | tee -a /tmp/data.txt &
     fi
@@ -273,7 +273,7 @@ elif [ "$action" == "sniff" ]; then
   if [ $platform == "psn" ]; then
     ngrep -l -q -W byline -d $INTERFACE "psn-4" udp | grep --line-buffered -o -P 'psn-4[0]{8}\K[A-F0-9]{7}' | tee -a data.txt &
   elif [ $platform == "xbox" ]; then
-    ngrep -l -q -W byline -d $INTERFACE "xboxpwid:" udp | grep --line-buffered -o -P 'xboxpwid:[A-F0-9]{24}\K[A-F0-9]{8}' | tee -a data.txt &
+    ngrep -l -q -W byline -d $INTERFACE "xboxpwid:" udp | grep --line-buffered -o -P 'xboxpwid:[A-F0-9]{22}\K[A-F0-9]{10}' | tee -a data.txt &
   elif [ $platform == "steam" ]; then
     ngrep -l -q -W byline -d $INTERFACE "steamid:" udp | grep --line-buffered -o -P 'steamid:[0-9]{7}\K[0-9]{10}' | tee -a data.txt &
   fi
