@@ -1,5 +1,5 @@
-# Destiny 2 Matchmaking Firewall Iptables
-# SDR Matchmaking Firewall Iptables
+# Destiny 2 Matchmaking Firewall
+# SDR Matchmaking Firewall
 
 ## Download
 #### Clone repo or run this command: 
