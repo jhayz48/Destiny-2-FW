@@ -91,16 +91,23 @@ install_dependencies () {
     if [[ $ans =~ ^(y|yes)$ ]]; then
       # Put all IPs except for IPv6, loopback and openVPN in an array
       ip_address_list=( $( ip a | grep inet | grep -v -e 10.8. -e 127.0.0.1 -e inet6 | awk '{ print $2 }' | cut -f1 -d"/" ) )
-      i=0
+      
+      echo "Please enter the number which corresponds to the ip address of your device that connects to your local network: "
+      i=1
       # Show all addresses in a numbered list
-      for address in ${ip_address_list[@]}; do
-        echo IP address number $i: $address
+      for address in "${ip_address_list[@]}"; do
+        echo "    $i) $address"
+        ((i++))
       done
+      
       # Have them type out which IP connects to the internet and set IP address based off of that
-      echo Please input the line number with the IP address that connects to the internet:
-      read ip_line_number
-      ip="${ip_address_list[$ip_line_number]}"
-      fi;
+      read -p "Choice: " ip_line_number
+      ip_list_index=$((ip_line_number - 1))
+      ip="${ip_address_list[$ip_list_index]}"
+      if [ -z $ip ]; then
+        echo "Ip does not exist."
+        exit 1;
+      fi
     else
       ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
     fi;
@@ -109,6 +116,8 @@ install_dependencies () {
     apt-get update > /dev/null
   
     DEBIAN_FRONTEND=noninteractive apt-get -y -q install iptables iptables-persistent ngrep nginx > /dev/null
+    service nginx start
+
     echo -e "${RED}Installing OpenVPN. Please wait while it finishes...${NC}"
     wget -q https://git.io/vpn -O openvpn-ubuntu-install.sh
     chmod +x ./openvpn-ubuntu-install.sh
