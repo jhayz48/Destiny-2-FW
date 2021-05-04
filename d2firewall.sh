@@ -100,7 +100,6 @@ install_dependencies () {
       echo Please input the line number with the IP address that connects to the internet:
       read ip_line_number
       ip="${ip_address_list[$ip_line_number]}"
-      fi;
     else
       ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
     fi;
