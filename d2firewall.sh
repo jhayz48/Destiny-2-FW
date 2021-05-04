@@ -127,7 +127,7 @@ setup () {
   echo -e "${GREEN}Setting up firewall rules.${NC}"
   reset_ip_tables
 
-  read -p "${RED}Enter your platform xbox, psn, steam:${NC} " platform
+  read -p "Enter your platform xbox, psn, steam: " platform
   platform=$(echo "$platform" | xargs)
   platform=${platform:-"psn"}
 
