@@ -89,10 +89,10 @@ install_dependencies () {
     ans=${ans:-"y"}
 
     if [[ $ans =~ ^(y|yes)$ ]]; then
-      echo -e -n "${GREEN}Enter the local IP of your system (192.168.x.x): "
+      echo -e -n "${GREEN}Enter the local IP of your system ${RED}(192.168.x.x)${NC}: "
       read ip
       if [ -z "$ip" ]; then
-        echo "IP Cannot be empty. Please rerun the setup."
+        echo "${RED}IP Cannot be empty. Please rerun the setup.${NC}"
         exit 1;
       fi;
     else
@@ -127,7 +127,7 @@ setup () {
   echo -e "${GREEN}Setting up firewall rules.${NC}"
   reset_ip_tables
 
-  read -p "Enter your platform xbox, psn, steam: " platform
+  read -p "${RED}Enter your platform xbox, psn, steam:${NC} " platform
   platform=$(echo "$platform" | xargs)
   platform=${platform:-"psn"}
 
