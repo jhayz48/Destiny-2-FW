@@ -89,11 +89,17 @@ install_dependencies () {
     ans=${ans:-"y"}
 
     if [[ $ans =~ ^(y|yes)$ ]]; then
-      echo -e -n "${GREEN}Enter the local IP of your system ${RED}(192.168.x.x)${NC}: "
-      read ip
-      if [ -z "$ip" ]; then
-        echo "${RED}IP Cannot be empty. Please rerun the setup.${NC}"
-        exit 1;
+      # Put all IPs except for IPv6, loopback and openVPN in an array
+      ip_address_list=( $( ip a | grep inet | grep -v -e 10.8. -e 127.0.0.1 -e inet6 | awk '{ print $2 }' | cut -f1 -d"/" ) )
+      i=0
+      # Show all addresses in a numbered list
+      for address in ${ip_address_list[@]}; do
+        echo IP address number $i: $address
+      done
+      # Have them type out which IP connects to the internet and set IP address based off of that
+      echo Please input the line number with the IP address that connects to the internet:
+      read ip_line_number
+      ip="${ip_address_list[$ip_line_number]}"
       fi;
     else
       ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
