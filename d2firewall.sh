@@ -110,6 +110,7 @@ install_dependencies () {
     wait;
     cp /root/client.ovpn /var/www/html/client.ovpn
     
+    clear
     echo -e "${GREEN}You can download the openvpn config from ${BLUE}http://$ip/client.ovpn"
     echo -e "${GREEN}If you are unable to access this file, you may need to allow/open the http port 80 with your vps provider."
     echo -e "Otherwise you can always run the command cat /root/client.ovpn and copy/paste ALL of its contents in a file on your PC."
@@ -119,7 +120,7 @@ install_dependencies () {
   else
     DEBIAN_FRONTEND=noninteractive apt-get -y -q install iptables iptables-persistent ngrep > /dev/null
   fi
-  clear
+  
 }
 
 setup () {
