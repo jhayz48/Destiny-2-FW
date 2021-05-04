@@ -84,7 +84,7 @@ install_dependencies () {
   
   if [[ $yn =~ ^(y|yes)$ ]]; then
 
-    echo -e -n "${GREEN}Is this for a local/home setup?${NC} y/n: "
+    echo -e -n "${GREEN}Is this for a local/home setup? ${RED}(Answer no if AWS/VPS)${NC} y/n: "
     read ans
     ans=${ans:-"y"}
 
