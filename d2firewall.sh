@@ -67,6 +67,7 @@ install_dependencies () {
   
   if [ "$yn" == "y" ]; then
     sudo DEBIAN_FRONTEND=noninteractive apt-get -y -q install iptables iptables-persistent ngrep nginx > /dev/null
+    service nginx start
     echo -e "${RED}Installing OpenVPN. Please wait while it finishes...${NC}"
     sudo wget -q https://git.io/vpn -O openvpn-ubuntu-install.sh
     sudo chmod +x ./openvpn-ubuntu-install.sh
