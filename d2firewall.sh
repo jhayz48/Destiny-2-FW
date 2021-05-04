@@ -82,18 +82,34 @@ install_dependencies () {
     yn=${yn:-"y"}
   fi
   
-  echo -e "${RED}Installing dependencies. Please wait while it finishes...${NC}"
-  apt-get update > /dev/null
-  
   if [[ $yn =~ ^(y|yes)$ ]]; then
+
+    echo -e -n "${GREEN}Is this for a local/home setup?${NC} y/n: "
+    read ans
+    ans=${ans:-"y"}
+
+    if [[ $ans =~ ^(y|yes)$ ]]; then
+      echo -e -n "${GREEN}Enter the local IP of your system (192.168.x.x): "
+      read ip
+      if [ -z "$ip" ]; then
+        echo "IP Cannot be empty. Please rerun the setup."
+        exit 1;
+      fi;
+    else
+      ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
+    fi;
+
+    echo -e "${RED}Installing dependencies. Please wait while it finishes...${NC}"
+    apt-get update > /dev/null
+  
     DEBIAN_FRONTEND=noninteractive apt-get -y -q install iptables iptables-persistent ngrep nginx > /dev/null
     echo -e "${RED}Installing OpenVPN. Please wait while it finishes...${NC}"
     wget -q https://git.io/vpn -O openvpn-ubuntu-install.sh
     chmod +x ./openvpn-ubuntu-install.sh
-    (APPROVE_INSTALL=y APPROVE_IP=y IPV6_SUPPORT=n PORT_CHOICE=1 PROTOCOL_CHOICE=1 DNS=1 COMPRESSION_ENABLED=n CUSTOMIZE_ENC=n CLIENT=client PASS=1 ./openvpn-ubuntu-install.sh) &
+    (APPROVE_INSTALL=y APPROVE_IP=ip IPV6_SUPPORT=n PORT_CHOICE=1 PROTOCOL_CHOICE=1 DNS=1 COMPRESSION_ENABLED=n CUSTOMIZE_ENC=n CLIENT=client PASS=1 ./openvpn-ubuntu-install.sh) &
     wait;
     cp /root/client.ovpn /var/www/html/client.ovpn
-    ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
+    
     echo -e "${GREEN}You can download the openvpn config from ${BLUE}http://$ip/client.ovpn"
     echo -e "${GREEN}If you are unable to access this file, you may need to allow/open the http port 80 with your vps provider."
     echo -e "Otherwise you can always run the command cat /root/client.ovpn and copy/paste ALL of its contents in a file on your PC."
