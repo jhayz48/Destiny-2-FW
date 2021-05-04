@@ -92,7 +92,7 @@ install_dependencies () {
       # Put all IPs except for IPv6, loopback and openVPN in an array
       ip_address_list=( $( ip a | grep inet | grep -v -e 10.8. -e 127.0.0.1 -e inet6 | awk '{ print $2 }' | cut -f1 -d"/" ) )
       
-      echo "Please enter the number which corresponds to the ip address of your device that connects to your local network: "
+      echo "Please enter the number which corresponds to the private IP address of your device that connects to your local network: "
       i=1
       # Show all addresses in a numbered list
       for address in "${ip_address_list[@]}"; do
