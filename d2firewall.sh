@@ -209,8 +209,6 @@ setup () {
     ((INDEX1++))
   done
 
-  iptables-save > /etc/iptables/rules.v4
-
   echo "Setup is complete and matchmaking firewall is now active."
 }
 
@@ -307,8 +305,6 @@ elif [ "$action" == "load" ]; then
   echo "Loading firewall rules."
   if [ -f ./data.txt ]; then
       bash d2firewall.sh -a setup < ./data.txt
-  else
-    iptables-restore < /etc/iptables/rules.v4
   fi
 elif [ "$action" == "reset" ]; then
   echo "Erasing all firewall rules."
