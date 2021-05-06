@@ -20,7 +20,7 @@ done
 reset_ip_tables () {
 
   # start iptables service if not started
-  if service iptables status | grep dead; then
+  if service iptables status | grep -q dead; then
     service iptables start
   fi
 
@@ -58,6 +58,8 @@ get_platform_match_str () {
 auto_sniffer () {
   echo -e "${RED}Press any key to stop sniffing. DO NOT CTRL C${NC}"
   sleep 1
+
+  #sniff the ids based on platform
   if [ "$1" == "psn" ]; then
     ngrep -l -q -W byline -d $INTERFACE "psn-4" udp | grep --line-buffered -o -P 'psn-4[0]{8}\K[A-F0-9]{7}' | tee -a "$2" &
   elif [ "$1" == "xbox" ]; then
@@ -65,6 +67,8 @@ auto_sniffer () {
   elif [ "$1" == "steam" ]; then
     ngrep -l -q -W byline -d $INTERFACE "steamid:" udp | grep --line-buffered -o -P 'steamid:\K[0-9]{17}' | tee -a "$2" &
   fi
+
+  #run infinitely until key is pressed
   while [ true ] ; do
     read -t 1 -n 1
     if [ $? = 0 ] ; then
@@ -75,9 +79,14 @@ auto_sniffer () {
 }
 
 install_dependencies () {
+
+  # enable ip forwarding
   sysctl -w net.ipv4.ip_forward=1 > /dev/null
+
+  # disable ufw firewall
   ufw disable > /dev/null
 
+  # check if openvpn is already installed
   if ip a | grep -q "tun0"; then
     yn="n"
   else 
@@ -113,13 +122,17 @@ install_dependencies () {
         exit 1;
       fi
     else
+      # get public ipv4 address
       ip=$(dig +short myip.opendns.com @resolver1.opendns.com)
     fi;
 
     echo -e "${RED}Installing dependencies. Please wait while it finishes...${NC}"
     apt-get update > /dev/null
   
+    # install dependencies
     DEBIAN_FRONTEND=noninteractive apt-get -y -q install iptables iptables-persistent ngrep nginx > /dev/null
+
+    # start nginx web service
     service nginx start
 
     echo -e "${RED}Installing OpenVPN. Please wait while it finishes...${NC}"
@@ -127,6 +140,8 @@ install_dependencies () {
     chmod +x ./openvpn-ubuntu-install.sh
     (APPROVE_INSTALL=y APPROVE_IP=ip IPV6_SUPPORT=n PORT_CHOICE=1 PROTOCOL_CHOICE=1 DNS=1 COMPRESSION_ENABLED=n CUSTOMIZE_ENC=n CLIENT=client PASS=1 ./openvpn-ubuntu-install.sh) &
     wait;
+
+    # move openvpn config to public web folder
     cp /root/client.ovpn /var/www/html/client.ovpn
     
     clear
@@ -135,6 +150,8 @@ install_dependencies () {
     echo -e "Otherwise you can always run the command cat /root/client.ovpn and copy/paste ALL of its contents in a file on your PC."
     echo -e "It will be deleted automatically in 15 minutes for security reasons."
     echo -e "Be sure to import this config to your router and connect your consoles before proceeding any further.${NC}"
+
+    # stop nginx web service after 15 minutes and delete openvpn config
     nohup bash -c 'sleep 900 && service nginx stop && apt remove nginx -y && rm /var/www/html/client.ovpn' &>/dev/null &
   else
     DEBIAN_FRONTEND=noninteractive apt-get -y -q install iptables iptables-persistent ngrep > /dev/null
@@ -143,7 +160,11 @@ install_dependencies () {
 }
 
 setup () {
-  echo -e "${GREEN}Setting up firewall rules.${NC}"
+
+  if [ -z "$1" ]; then
+    echo -e "${GREEN}Setting up firewall rules.${NC}"
+  fi
+  
   reset_ip_tables
 
   read -p "Enter your platform xbox, psn, steam: " platform
@@ -187,8 +208,13 @@ setup () {
       ids+=( "$idf;$line" )
       ((c++))
     done <<< "$tmp_ids"
-  else #add ids manually
-    echo -e "${RED}Please add the 2 fireteam leaders first.${NC}"
+  else 
+    #add ids manually
+
+    if [ -z "$1" ]; then
+      echo -e "${RED}Please add the 2 fireteam leaders first.${NC}"
+    fi
+
     read -p "How many account IDs do you want to add? " snum
     if [ $snum -lt 1 ]; then
       exit 1;
@@ -212,7 +238,6 @@ setup () {
 
   mv /tmp/data.txt ./data.txt
 
-  #echo "-m string --string $reject_str --algo bm -j REJECT" > reject.rule
   iptables -I FORWARD -p udp --dport 27000:27200 -m string --string "$reject_str" --algo bm -j REJECT
   
   n=${#ids[*]}
@@ -253,7 +278,27 @@ setup () {
     ((INDEX1++))
   done
 
-  echo -e "${GREEN}Setup is complete and Matchmaking Firewall is now active.${NC}"
+  if [ -z "$1" ]; then
+    echo -e "${GREEN}Setup is complete and Matchmaking Firewall is now active.${NC}"
+  fi
+}
+
+add () {
+  read -p "Enter the sniffed ID: " id
+  id=$(echo "$id" | xargs)
+  if [ -n "$id" ]; then
+    echo "$id" >> data.txt
+    n=$(sed -n '4p' < data.txt)
+    ((n++))
+    sed -i "4c$n" data.txt
+    read -p "Would you like to enter another ID? y/n " yn
+    yn=${yn:-"y"}
+    if [[ $yn =~ ^(y|yes)$ ]]; then
+      add
+    else
+      setup true < data.txt
+    fi
+  fi
 }
 
 if [ "$action" == "setup" ]; then
@@ -283,22 +328,9 @@ elif [ "$action" == "close" ]; then
     iptables -I FORWARD -p udp --dport 27000:27200 -m string --string "$reject_str" --algo bm -j REJECT
   fi
 elif [ "$action" == "add" ]; then
-  read -p "Enter the sniffed ID: " id
-  id=$(echo "$id" | xargs)
-  if [ ! -z "$id" ]; then
-    echo "$id" >> data.txt
-    n=$(sed -n '4p' < data.txt)
-    ((n++))
-    sed -i "4c$n" data.txt
-    read -p "Would you like to enter another ID? y/n " yn
-    yn=${yn:-"y"}
-    if [[ $yn =~ ^(y|yes)$ ]]; then
-      bash d2firewall.sh -a add
-    else
-      bash d2firewall.sh -a setup < data.txt
-    fi
-  fi
+  add
 elif [ "$action" == "remove" ]; then
+  # display list of ids to user
   list=$(tail -n +5 data.txt | cat -n)
   echo "$list"
   total=$(echo "$list" | wc -l)
@@ -308,7 +340,7 @@ elif [ "$action" == "remove" ]; then
     n=$(sed -n '4p' < data.txt)
     n=$((n-num))
     sed -i "4c$n" data.txt
-    bash d2firewall.sh -a setup < data.txt
+    setup true < data.txt
   fi;
 elif [ "$action" == "sniff" ]; then
   platform=$(sed -n '1p' < data.txt)
@@ -316,7 +348,7 @@ elif [ "$action" == "sniff" ]; then
       echo "Only psn,xbox, and steam are supported atm."
     exit 1
   fi
-  bash d2firewall.sh -a stop
+  stop
 
   #auto sniff
   echo -e "${RED}Please have the players join on the fireteam leaders in orbit.${NC}"
@@ -330,8 +362,10 @@ elif [ "$action" == "sniff" ]; then
   n=$(tail -n +5 data.txt | wc -l)
   sed -i "4c$n" data.txt
 
-  bash d2firewall.sh -a setup < data.txt
+  setup true < data.txt
+
 elif [ "$action" == "list" ]; then
+  # list the ids added to the data.txt file
   tail -n +5 data.txt | cat -n
 elif [ "$action" == "update" ]; then
   wget -q https://raw.githubusercontent.com/cloudex99/Destiny-2-Matchmaking-Firewall/dev/d2firewall.sh -O ./d2firewall.sh
@@ -339,11 +373,11 @@ elif [ "$action" == "update" ]; then
   echo -e "${GREEN}Script update complete."
   echo -e "Please rerun the initial setup to avoid any issues.${NC}"
 elif [ "$action" == "load" ]; then
-  echo "Loading firewall rules."
+  echo -e "${GREEN}Loading firewall rules.${NC}"
   if [ -f ./data.txt ]; then
-      bash d2firewall.sh -a setup < ./data.txt
+      setup true < ./data.txt
   fi
 elif [ "$action" == "reset" ]; then
-  echo "Erasing all firewall rules."
+  echo -e "${RED}Erasing all firewall rules.${NC}"
   reset_ip_tables
 fi
