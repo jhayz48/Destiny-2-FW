@@ -12,15 +12,15 @@
 ``` sudo bash d2firewall.sh -a remove ```
 #### Sniff: Auto sniffer. (You must add your 2 host consoles prior to running this)
 ``` sudo bash d2firewall.sh -a sniff ```
-#### Start: Disables public matchmaking
-``` sudo bash d2firewall.sh -a start ```
-#### Stop: Enables public matchmaking 
-``` sudo bash d2firewall.sh -a stop ```
+#### Open: Enables public matchmaking 
+``` sudo bash d2firewall.sh -a open ```
+#### Close: Disables public matchmaking
+``` sudo bash d2firewall.sh -a close ```
 #### List: List the current accounts
 ``` sudo bash d2firewall.sh -a list ```
 #### Update: Update the script to the newest version.
 ``` sudo bash d2firewall.sh -a update ```
-#### Load: Load the saved rules
+#### Load: Load the saved rules after a reboot
 ``` sudo bash d2firewall.sh -a load ```
 #### Reset: Reset iptables to default
 ``` sudo bash d2firewall.sh -a reset ```
