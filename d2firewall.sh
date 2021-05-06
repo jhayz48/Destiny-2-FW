@@ -18,9 +18,13 @@ while getopts "a:" opt; do
 done
 
 reset_ip_tables () {
-  service iptables restart
 
-  #reset iptables to default
+  # start iptables service if not started
+  if service iptables status | grep dead; then
+    service iptables start
+  fi
+
+  # reset iptables to default
   iptables -P INPUT ACCEPT
   iptables -P FORWARD ACCEPT
   iptables -P OUTPUT ACCEPT
@@ -28,7 +32,7 @@ reset_ip_tables () {
   iptables -F
   iptables -X
 
-  #allow openvpn
+  # allow openvpn
   if ip a | grep -q "tun0"; then
     if ! iptables-save | grep -q "POSTROUTING -s 10.8.0.0/24"; then
       iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
@@ -249,8 +253,6 @@ setup () {
     ((INDEX1++))
   done
 
-  iptables-save > /etc/iptables/rules.v4
-
   echo -e "${GREEN}Setup is complete and Matchmaking Firewall is now active.${NC}"
 }
 
@@ -261,13 +263,17 @@ if [ "$action" == "setup" ]; then
   fi
   setup
 elif [ "$action" == "stop" ]; then
+  echo "This command is depreciated. Please run: sudo bash d2firewall.sh -a open"
+elif [ "$action" == "start" ]; then
+  echo "This command is depreciated. Please run: sudo bash d2firewall.sh -a close"
+elif [ "$action" == "open" ]; then
   if iptables-save | grep -q "REJECT"; then
     echo "Matchmaking is no longer being restricted."
     platform=$(sed -n '1p' < data.txt)
     reject_str=$(get_platform_match_str "$platform")
     iptables -D FORWARD -p udp --dport 27000:27200 -m string --string "$reject_str" --algo bm -j REJECT
   fi
-elif [ "$action" == "start" ]; then
+elif [ "$action" == "close" ]; then
   if ! iptables-save | grep -q "REJECT"; then
     echo "Matchmaking is now being restricted."
     platform=$(sed -n '1p' < data.txt)
@@ -336,8 +342,6 @@ elif [ "$action" == "load" ]; then
   echo "Loading firewall rules."
   if [ -f ./data.txt ]; then
       bash d2firewall.sh -a setup < ./data.txt
-  else
-    iptables-restore < /etc/iptables/rules.v4
   fi
 elif [ "$action" == "reset" ]; then
   echo "Erasing all firewall rules."
