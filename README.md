@@ -20,7 +20,7 @@
 ``` sudo bash d2firewall.sh -a list ```
 #### Update: Update the script to the newest version.
 ``` sudo bash d2firewall.sh -a update ```
-#### Load: Load the saved rules
+#### Load: Load the saved rules after a reboot
 ``` sudo bash d2firewall.sh -a load ```
 #### Reset: Reset iptables to default
 ``` sudo bash d2firewall.sh -a reset ```
