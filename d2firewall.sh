@@ -304,6 +304,26 @@ add () {
   fi
 }
 
+open () {
+  if iptables-save | grep -q "REJECT"; then
+    echo -e "${RED}Matchmaking is no longer being restricted.${NC}"
+    platform=$(sed -n '1p' < data.txt)
+    reject_str=$(get_platform_match_str "$platform")
+    iptables -D FORWARD -p udp --dport 27000:27200 -m string --string "$reject_str" --algo bm -j REJECT
+  fi
+}
+
+close () {
+  if ! iptables-save | grep -q "REJECT"; then
+    echo -e "${RED}Matchmaking is now being restricted.${NC}"
+    platform=$(sed -n '1p' < data.txt)
+    reject_str=$(get_platform_match_str "$platform")
+    pos=$(iptables -L FORWARD | grep -c "system")
+    ((pos++))
+    iptables -I FORWARD $pos -p udp --dport 27000:27200 -m string --string "$reject_str" --algo bm -j REJECT
+  fi
+}
+
 if [ "$action" == "setup" ]; then
   if ! command -v ngrep &> /dev/null
   then
@@ -312,26 +332,14 @@ if [ "$action" == "setup" ]; then
   setup
 elif [ "$action" == "stop" ]; then
   echo "This command is depreciated. Please run: sudo bash d2firewall.sh -a open"
-  sudo bash d2firewall.sh -a open
+  open
 elif [ "$action" == "start" ]; then
   echo "This command is depreciated. Please run: sudo bash d2firewall.sh -a close"
-  sudo bash d2firewall.sh -a close
+  close
 elif [ "$action" == "open" ]; then
-  if iptables-save | grep -q "REJECT"; then
-    echo "Matchmaking is no longer being restricted."
-    platform=$(sed -n '1p' < data.txt)
-    reject_str=$(get_platform_match_str "$platform")
-    iptables -D FORWARD -p udp --dport 27000:27200 -m string --string "$reject_str" --algo bm -j REJECT
-  fi
+  open
 elif [ "$action" == "close" ]; then
-  if ! iptables-save | grep -q "REJECT"; then
-    echo "Matchmaking is now being restricted."
-    platform=$(sed -n '1p' < data.txt)
-    reject_str=$(get_platform_match_str "$platform")
-    pos=$(iptables -L FORWARD | grep -c "system")
-    ((pos++))
-    iptables -I FORWARD -p udp --dport 27000:27200 -m string --string "$reject_str" --algo bm -j REJECT
-  fi
+  close
 elif [ "$action" == "add" ]; then
   add
 elif [ "$action" == "remove" ]; then
