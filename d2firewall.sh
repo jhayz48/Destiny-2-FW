@@ -312,8 +312,10 @@ if [ "$action" == "setup" ]; then
   setup
 elif [ "$action" == "stop" ]; then
   echo "This command is depreciated. Please run: sudo bash d2firewall.sh -a open"
+  sudo bash d2firewall.sh -a open
 elif [ "$action" == "start" ]; then
   echo "This command is depreciated. Please run: sudo bash d2firewall.sh -a close"
+  sudo bash d2firewall.sh -a close
 elif [ "$action" == "open" ]; then
   if iptables-save | grep -q "REJECT"; then
     echo "Matchmaking is no longer being restricted."
@@ -351,7 +353,7 @@ elif [ "$action" == "sniff" ]; then
       echo "Only psn,xbox, and steam are supported atm."
     exit 1
   fi
-  stop
+  open
 
   #auto sniff
   echo -e "${RED}Please have the players join on the fireteam leaders in orbit.${NC}"
