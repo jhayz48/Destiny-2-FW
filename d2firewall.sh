@@ -85,6 +85,8 @@ install_dependencies () {
 
   # disable ufw firewall
   ufw disable > /dev/null
+  service ufw stop > /dev/null
+  systemctl disable ufw > /dev/null
 
   # check if openvpn is already installed
   if ip a | grep -q "tun0"; then
@@ -131,18 +133,19 @@ install_dependencies () {
   
     # install dependencies
     DEBIAN_FRONTEND=noninteractive apt-get -y -q install iptables iptables-persistent ngrep nginx > /dev/null
+    systemctl enable iptables
 
     # start nginx web service
     service nginx start
 
     echo -e "${RED}Installing OpenVPN. Please wait while it finishes...${NC}"
-    wget -q https://git.io/vpn -O openvpn-ubuntu-install.sh
-    chmod +x ./openvpn-ubuntu-install.sh
-    (APPROVE_INSTALL=y APPROVE_IP=ip IPV6_SUPPORT=n PORT_CHOICE=1 PROTOCOL_CHOICE=1 DNS=1 COMPRESSION_ENABLED=n CUSTOMIZE_ENC=n CLIENT=client PASS=1 ./openvpn-ubuntu-install.sh) &
+    curl -s -O https://raw.githubusercontent.com/angristan/openvpn-install/master/openvpn-install.sh > /dev/null
+    chmod +x ./openvpn-install.sh
+    (ENDPOINT="$ip" APPROVE_INSTALL=y APPROVE_IP=y IPV6_SUPPORT=n PORT_CHOICE=1 PROTOCOL_CHOICE=1 DNS=1 COMPRESSION_ENABLED=n CUSTOMIZE_ENC=n CLIENT=client PASS=1 ./openvpn-install.sh) &
     wait;
 
     # move openvpn config to public web folder
-    cp /root/client.ovpn /var/www/html/client.ovpn
+    cp /"$SUDO_USER"/client.ovpn /var/www/html/client.ovpn
     
     clear
     echo -e "${GREEN}You can download the openvpn config from ${BLUE}http://$ip/client.ovpn"
