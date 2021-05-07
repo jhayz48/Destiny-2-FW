@@ -33,7 +33,7 @@ reset_ip_tables () {
   iptables -X
 
   # allow openvpn
-  if ip a | grep -q "tun0"; then
+  if ( ip a | grep -q "tun0" ) && [ $INTERFACE == "tun0" ]; then
     if ! iptables-save | grep -q "POSTROUTING -s 10.8.0.0/24"; then
       iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
     fi
