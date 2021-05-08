@@ -1,5 +1,6 @@
 #!/bin/bash
 #credits to @BasRaayman and @inchenzo
+#dev
 
 INTERFACE="tun0"
 DEFAULT_NET="10.8.0.0/24"
