@@ -1,4 +1,4 @@
-# Destiny 2/SDR Matchmaking Firewall
+# Destiny 2 SDR Matchmaking Firewall
 
 ## Download
 #### Clone repo or run this command: 
