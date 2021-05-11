@@ -1,8 +1,11 @@
 #!/bin/bash
 #credits to @BasRaayman and @inchenzo
 
-INTERFACE="tun0"
-DEFAULT_NET="10.8.0.0/24"
+ALGO="bm"
+INTERFACE=$(cat interface.txt)
+INTERFACE=${INTERFACE:-"tun0"}
+NETWORK=$(cat network.txt)
+NETWORK=${NETWORK:-"10.8.0.0/24"}
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
@@ -32,7 +35,7 @@ reset_ip_tables () {
   iptables -X
 
   # allow openvpn
-  if ( ip a | grep -q "tun0" ) && [ $INTERFACE == "tun0" ]; then
+  if ( ip a | grep -q "tun0" ) && [ "$INTERFACE" == "tun0" ]; then
     if ! iptables-save | grep -q "POSTROUTING -s 10.8.0.0/24"; then
       iptables -t nat -A POSTROUTING -s 10.8.0.0/24 -o eth0 -j MASQUERADE
     fi
@@ -60,11 +63,11 @@ auto_sniffer () {
 
   #sniff the ids based on platform
   if [ "$1" == "psn" ]; then
-    ngrep -l -q -W byline -d $INTERFACE "psn-4" udp | grep --line-buffered -o -P 'psn-4[0]{8}\K[A-F0-9]{7}' | tee -a "$2" &
+    ngrep -l -q -W byline -d "$INTERFACE" "psn-4" udp | grep --line-buffered -o -P 'psn-4[0]{8}\K[A-F0-9]{7}' | tee -a "$2" &
   elif [ "$1" == "xbox" ]; then
-    ngrep -l -q -W byline -d $INTERFACE "xboxpwid:" udp | grep --line-buffered -o -P 'xboxpwid:\K[A-F0-9]{32}' | tee -a "$2" &
+    ngrep -l -q -W byline -d "$INTERFACE" "xboxpwid:" udp | grep --line-buffered -o -P 'xboxpwid:\K[A-F0-9]{32}' | tee -a "$2" &
   elif [ "$1" == "steam" ]; then
-    ngrep -l -q -W byline -d $INTERFACE "steamid:" udp | grep --line-buffered -o -P 'steamid:\K[0-9]{17}' | tee -a "$2" &
+    ngrep -l -q -W byline -d "$INTERFACE" "steamid:" udp | grep --line-buffered -o -P 'steamid:\K[0-9]{17}' | tee -a "$2" &
   fi
 
   #run infinitely until key is pressed
@@ -178,7 +181,7 @@ setup () {
 
   read -p "Enter your network/netmask: " net
   net=$(echo "$net" | xargs)
-  net=${net:-$DEFAULT_NET}
+  net=${net:-$NETWORK}
   echo "$net" >> /tmp/data.txt
 
   ids=()
@@ -240,7 +243,7 @@ setup () {
 
   mv /tmp/data.txt ./data.txt
 
-  iptables -I FORWARD -p udp --dport 27000:27200 -m string --string "$reject_str" --algo bm -j REJECT
+  iptables -I FORWARD -i "$INTERFACE" -p udp --dport 27000:27200 -m string --string "$reject_str" --algo "$ALGO" -j REJECT
   
   n=${#ids[*]}
   INDEX=1
@@ -251,9 +254,9 @@ setup () {
     offset=$((n - 2))
     if [ $INDEX -gt $offset ]; then
       iptables -N "${id[0]}"
-      iptables -I FORWARD -s "$net" -p udp --dport 27000:27200 -m string --string "${id[1]}" --algo bm -j "${id[0]}"
+      iptables -I FORWARD -i "$INTERFACE" -s "$net" -p udp --dport 27000:27200 -m string --string "${id[1]}" --algo "$ALGO" -j "${id[0]}"
     else
-      iptables -I FORWARD -s "$net" -p udp --dport 27000:27200 -m string --string "${id[1]}" --algo bm -j ACCEPT
+      iptables -I FORWARD -i "$INTERFACE" -s "$net" -p udp --dport 27000:27200 -m string --string "${id[1]}" --algo "$ALGO" -j ACCEPT
     fi
     ((INDEX++))
   done
@@ -273,7 +276,7 @@ setup () {
       fi
       if [ "$i" != "$j" ]; then
         IFS=';' read -r -a idx <<< "$j"
-        iptables -A "${id[0]}" -s "$net" -p udp --dport 27000:27200 -m string --string "${idx[1]}" --algo bm -j ACCEPT
+        iptables -A "${id[0]}" -i "$INTERFACE" -s "$net" -p udp --dport 27000:27200 -m string --string "${idx[1]}" --algo "$ALGO" -j ACCEPT
       fi
       ((INDEX2++))
     done
@@ -308,7 +311,7 @@ open () {
     echo -e "${RED}Matchmaking is no longer being restricted.${NC}"
     platform=$(sed -n '1p' < data.txt)
     reject_str=$(get_platform_match_str "$platform")
-    iptables -D FORWARD -p udp --dport 27000:27200 -m string --string "$reject_str" --algo bm -j REJECT
+    iptables -D FORWARD -i "$INTERFACE" -p udp --dport 27000:27200 -m string --string "$reject_str" --algo "$ALGO" -j REJECT
   fi
 }
 
@@ -319,7 +322,7 @@ close () {
     reject_str=$(get_platform_match_str "$platform")
     pos=$(iptables -L FORWARD | grep -c "system")
     ((pos++))
-    iptables -I FORWARD $pos -p udp --dport 27000:27200 -m string --string "$reject_str" --algo bm -j REJECT
+    iptables -I FORWARD "$pos" -i "$INTERFACE" -p udp --dport 27000:27200 -m string --string "$reject_str" --algo "$ALGO" -j REJECT
   fi
 }
 
@@ -386,8 +389,8 @@ elif [ "$action" == "update" ]; then
   echo -e "Please rerun the initial setup to avoid any issues.${NC}"
 elif [ "$action" == "load" ]; then
   echo -e "${GREEN}Loading firewall rules.${NC}"
-  if [ -f ./data.txt ]; then
-      setup true < ./data.txt
+  if [ -f data.txt ]; then
+      setup true < data.txt
   fi
 elif [ "$action" == "reset" ]; then
   echo -e "${RED}Erasing all firewall rules.${NC}"
