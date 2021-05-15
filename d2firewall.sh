@@ -2,10 +2,8 @@
 #credits to @BasRaayman and @inchenzo
 
 ALGO="bm"
-INTERFACE=$(cat interface.txt)
-INTERFACE=${INTERFACE:-"tun0"}
-NETWORK=$(cat network.txt)
-NETWORK=${NETWORK:-"10.8.0.0/24"}
+INTERFACE=$(cat interface.txt 2>/dev/null || echo "tun0")
+NETWORK=$(cat network.txt 2>/dev/null || echo "10.8.0.0/24")
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
@@ -221,10 +219,10 @@ setup () {
     fi
 
     read -p "How many account IDs do you want to add? " snum
-    if [ $snum -lt 1 ]; then
+    if [ "$snum" -lt 1 ]; then
       exit 1;
     fi;
-    echo $snum >> /tmp/data.txt
+    echo "$snum" >> /tmp/data.txt
     for ((i = 0; i < snum; i++))
     do 
       num=$(( $i + 1 ))
@@ -236,12 +234,12 @@ setup () {
       idf="system$num"
       read -p "Enter the sniffed Account ID for $who $num: " sid
       sid=$(echo "$sid" | xargs)
-      echo $sid >> /tmp/data.txt
+      echo "$sid" >> /tmp/data.txt
       ids+=( "$idf;$sid" )
     done
   fi;
-
-  mv /tmp/data.txt ./data.txt
+  mv /tmp/data.txt data.txt
+  chown "$SUDO_USER":"$SUDO_USER" data.txt
 
   iptables -I FORWARD -i "$INTERFACE" -p udp --dport 27000:27200 -m string --string "$reject_str" --algo "$ALGO" -j REJECT
   
@@ -289,7 +287,8 @@ setup () {
 }
 
 add () {
-  read -p "Enter the sniffed ID: " id
+  echo -e -n "${GREEN}Enter the sniffed ID: ${NC}"
+  read id
   id=$(echo "$id" | xargs)
   if [ -n "$id" ]; then
     echo "$id" >> data.txt
@@ -349,7 +348,8 @@ elif [ "$action" == "remove" ]; then
   list=$(tail -n +5 data.txt | cat -n)
   echo "$list"
   total=$(echo "$list" | wc -l)
-  read -p "How many IDs do you want to remove from the end of this list? " num
+  echo -e -n "${GREEN}How many IDs do you want to remove from the end of this list? ${NC}"
+  read num
   if [[ $num -gt 0 && $num -le $total ]]; then
     head -n -"$num" data.txt > /tmp/data.txt && mv /tmp/data.txt ./data.txt
     n=$(sed -n '4p' < data.txt)
@@ -363,17 +363,18 @@ elif [ "$action" == "sniff" ]; then
       echo "Only psn,xbox, and steam are supported atm."
     exit 1
   fi
+  # allow players to join fireteam
   open
 
-  #auto sniff
+  # automatically sniff the joining players account id
   echo -e "${RED}Please have the players join on the fireteam leaders in orbit.${NC}"
-  
   auto_sniffer "$platform" "data.txt"
 
-  #remove duplicates
-  awk '!a[$0]++' data.txt > /tmp/data.txt && mv /tmp/data.txt ./data.txt
+  # remove duplicates
+  awk '!a[$0]++' data.txt > /tmp/data.txt && mv /tmp/data.txt data.txt
+  chown "$SUDO_USER":"$SUDO_USER" data.txt 
 
-  #update total number of ids
+  # update total number of ids
   n=$(tail -n +5 data.txt | wc -l)
   sed -i "4c$n" data.txt
 
