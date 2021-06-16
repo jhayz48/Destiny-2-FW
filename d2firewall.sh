@@ -340,11 +340,11 @@ if [ "$action" == "setup" ]; then
       install_dependencies
   fi
   setup
-elif [ "$action" == "start" ]; then
-  echo "This command is depreciated. Please run: sudo bash d2firewall.sh -a open"
-  open
 elif [ "$action" == "stop" ]; then
-  echo "This command is depreciated. Please run: sudo bash d2firewall.sh -a close"
+  #echo "This command is depreciated. Please run: sudo bash d2firewall.sh -a open"
+  open
+elif [ "$action" == "start" ]; then
+  #echo "This command is depreciated. Please run: sudo bash d2firewall.sh -a close"
   close
 elif [ "$action" == "open" ]; then
   open
