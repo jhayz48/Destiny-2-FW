@@ -8,6 +8,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m'
+CUSTOM="ip_tables.txt"
 
 while getopts "a:" opt; do
   case $opt in
@@ -28,6 +29,13 @@ reset_ip_tables () {
   iptables -P INPUT ACCEPT
   iptables -P FORWARD ACCEPT
   iptables -P OUTPUT ACCEPT
+
+  # check if custom ip tables command is existing
+  if test -f "$CUSTOM"; then
+	echo "$CUSTOM exists, running the custom commands!"
+	chmod +x "$CUSTOM"
+	./"$CUSTOM"
+  fi
 
   iptables -F
   iptables -X
@@ -63,7 +71,8 @@ auto_sniffer () {
   if [ "$1" == "psn" ]; then
     ngrep -l -q -W byline -d "$INTERFACE" "psn-4" udp | grep --line-buffered -o -P 'psn-4[0]{8}\K[A-F0-9]{7}' | tee -a "$2" &
   elif [ "$1" == "xbox" ]; then
-    ngrep -l -q -W byline -d "$INTERFACE" "xboxpwid:" udp | grep --line-buffered -o -P 'xboxpwid:\K[A-F0-9]{32}' | tee -a "$2" &
+    #ngrep -l -q -W byline -d "$INTERFACE" "xboxpwid:" udp | grep --line-buffered -o -P 'xboxpwid:\K[A-F0-9]{32}' | tee -a "$2" &
+	ngrep -l -q -W byline -d "$INTERFACE" "xboxpwid:" udp | grep --line-buffered -o -P 'xboxpwid:[A-F0-9]{14}\K[A-F0-9]{18}' | cut -c-8 | tee -a "$2" &
   elif [ "$1" == "steam" ]; then
     ngrep -l -q -W byline -d "$INTERFACE" "steamid:" udp | grep --line-buffered -o -P 'steamid:\K[0-9]{17}' | tee -a "$2" &
   fi
@@ -172,7 +181,7 @@ setup () {
 
   read -p "Enter your platform xbox, psn, steam: " platform
   platform=$(echo "$platform" | xargs)
-  platform=${platform:-"psn"}
+  platform=${platform:-"xbox"}
 
   reject_str=$(get_platform_match_str "$platform")
   echo "$platform" > /tmp/data.txt
@@ -331,10 +340,10 @@ if [ "$action" == "setup" ]; then
       install_dependencies
   fi
   setup
-elif [ "$action" == "stop" ]; then
+elif [ "$action" == "start" ]; then
   echo "This command is depreciated. Please run: sudo bash d2firewall.sh -a open"
   open
-elif [ "$action" == "start" ]; then
+elif [ "$action" == "stop" ]; then
   echo "This command is depreciated. Please run: sudo bash d2firewall.sh -a close"
   close
 elif [ "$action" == "open" ]; then
@@ -384,7 +393,7 @@ elif [ "$action" == "list" ]; then
   # list the ids added to the data.txt file
   tail -n +5 data.txt | cat -n
 elif [ "$action" == "update" ]; then
-  wget -q https://raw.githubusercontent.com/fswdevl/Destiny-2-SDR-Matchmaking-Firewall/main/d2firewall.sh -O ./d2firewall.sh
+  wget -q https://raw.githubusercontent.com/THEBIG-1/Destiny-2-FW/main/d2firewall.sh -O ./d2firewall.sh
   chmod +x ./d2firewall.sh
   echo -e "${GREEN}Script update complete."
   echo -e "Please rerun the initial setup to avoid any issues.${NC}"
