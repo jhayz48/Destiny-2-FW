@@ -391,7 +391,8 @@ elif [ "$action" == "sniff" ]; then
 
 elif [ "$action" == "list" ]; then
   # list the ids added to the data.txt file
-  tail -n +5 data.txt | cat -n
+  list=$(tail -n +5 data.txt | cat -n)
+  echo "${RED}$list"
 elif [ "$action" == "update" ]; then
   wget -q https://raw.githubusercontent.com/jhayz48/Destiny-2-FW/main/d2firewall.sh -O ./d2firewall.sh
   chmod +x ./d2firewall.sh
